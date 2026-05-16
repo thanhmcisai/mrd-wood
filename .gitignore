@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local environments
+.venv/
+venv/
+env/
+.env
+
+# Datasets and feature caches
+dataset/
+datasets/
+data/
+results/**/feature_cache/
+results/**/spatial_cache/
+results_v4/
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+
+# Keep result CSVs and PNG figures in git.
+# PDF figures/manuscript builds are reproducible and intentionally ignored.
+*.pdf
+!results/figures/*.png
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.abs
+*.tex
+*.bib
+
+PLAN.md
+REVIEW_COLAB_ADDITIONAL_EXPERIMENTS.md
+REVIEW_FIXES.md
+FINAL_MANUSCRIPT_REVIEW.md
+COLAB_REVIEW_RUNS.md
+CITATION_REVIEW.md
+
+# Local downloads and third-party binaries
+drive-download-*/
+*.zip
+third_party/
+reference_papers/
+els-cas-templates/
+paper_latex/
+
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/

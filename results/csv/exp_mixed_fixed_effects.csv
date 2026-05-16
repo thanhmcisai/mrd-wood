@@ -1,0 +1,2 @@
+model,n,parameters,rank,r_squared,feature_beta,feature_se,feature_t,feature_p
+drop ~ feature_drift + dataset + backbone + perturbation + severity,1596,75,69,0.9238462758250275,0.7402477840438186,0.02384478547186372,31.044430444437985,2.581680158132319e-164

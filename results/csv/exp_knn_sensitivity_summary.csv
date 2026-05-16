@@ -1,0 +1,6 @@
+rule,mean_clean_acc,mean_pert_acc,mean_drop,feature_drop_pearson_r,feature_drop_pearson_p,feature_drop_spearman_rho,feature_drop_spearman_p,n,backbone_ranking_by_pert_acc
+knn1,0.9482649551376456,0.7010590578331383,0.24720589730450743,0.9159947233331995,0.0,0.9282805397431336,0.0,1596,dinov2_b > efficientnet_b3 > swin_tiny > hrnet32 > mobilenetv3 > convnext_tiny > resnet50
+knn10,0.9329805162266518,0.6781750439068938,0.2548054723197578,0.9041072767611152,0.0,0.9348102391400612,0.0,1596,dinov2_b > efficientnet_b3 > swin_tiny > hrnet32 > convnext_tiny > mobilenetv3 > resnet50
+knn3,0.9450585258805304,0.6876137798520645,0.2574447460284661,0.9114920660979169,0.0,0.937000694702445,0.0,1596,dinov2_b > efficientnet_b3 > swin_tiny > hrnet32 > convnext_tiny > mobilenetv3 > resnet50
+knn5,0.9418029589516091,0.6852263142397714,0.2565766447118376,0.907555223203288,0.0,0.9367593173936543,0.0,1596,dinov2_b > efficientnet_b3 > swin_tiny > hrnet32 > convnext_tiny > mobilenetv3 > resnet50
+nearest_centroid,0.8021896156312125,0.5668248516971699,0.2353647639340426,0.8797452497532299,0.0,0.9083297767681596,0.0,1596,dinov2_b > swin_tiny > efficientnet_b3 > hrnet32 > mobilenetv3 > convnext_tiny > resnet50

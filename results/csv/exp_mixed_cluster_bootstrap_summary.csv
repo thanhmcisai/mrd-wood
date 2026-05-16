@@ -1,0 +1,2 @@
+cluster_definition,n_clusters,bootstrap_B,slope_mean,slope_ci_lo,slope_ci_hi,r_mean,r_ci_lo,r_ci_hi
+dataset+backbone+perturbation,441,2000,1.039654624289817,1.0048233198010788,1.0748090321643997,0.9076247612966735,0.8924642687173056,0.9217209133211357

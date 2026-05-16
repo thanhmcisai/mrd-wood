@@ -1,0 +1,11 @@
+test,chi2,p,sig,n_conditions,W,CD,backbone,rank
+Friedman,243.94543744120372,8.063759906696663e-50,***,228.0,,,,
+Kendall_W,,,,228.0,0.17915814756188717,,,
+Nemenyi_CD,,,,228.0,,0.5966583700295469,,
+mean_rank,,,,,,,resnet50,5.469298245614035
+mean_rank,,,,,,,efficientnet_b3,3.6008771929824563
+mean_rank,,,,,,,convnext_tiny,4.6798245614035086
+mean_rank,,,,,,,swin_tiny,3.1447368421052633
+mean_rank,,,,,,,dinov2_b,2.8815789473684212
+mean_rank,,,,,,,hrnet32,3.776315789473684
+mean_rank,,,,,,,mobilenetv3,4.447368421052632

@@ -1,0 +1,5 @@
+model,component,value
+backbone_random_slope,random_cov:Group:Group,5.61415782183984e-05
+backbone_random_slope,random_cov:Group:feature_drift,0.00179994047443968
+backbone_random_slope,random_cov:feature_drift:Group,0.00179994047443968
+backbone_random_slope,random_cov:feature_drift:feature_drift,0.05770742669471751

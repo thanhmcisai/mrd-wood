@@ -1,0 +1,140 @@
+{
+  "profile": "full_colab_l4",
+  "paths": {
+    "root_path": "/content/drive/MyDrive/NCS",
+    "datasets_dir": "/content/drive/MyDrive/NCS/datasets",
+    "results_dir": "/content/drive/MyDrive/NCS/results_v5_k3_full"
+  },
+  "datasets": {
+    "tier_a": ["WRD25", "DTSR14", "PCA11"],
+    "tier_b": ["BFS46", "FSDM41", "GOIMAI", "WOODAUTH", "BD11"],
+    "tier_c": ["VN26_x10", "VN26_x20", "VN26_x50"]
+  },
+  "backbones": [
+    "resnet50",
+    "efficientnet_b3",
+    "convnext_tiny",
+    "swin_tiny",
+    "dinov2_b",
+    "hrnet32",
+    "mobilenetv3"
+  ],
+  "extraction": {
+    "global_clean_datasets": [
+      "WRD25",
+      "DTSR14",
+      "PCA11",
+      "BFS46",
+      "FSDM41",
+      "GOIMAI",
+      "WOODAUTH",
+      "BD11",
+      "VN26_x10",
+      "VN26_x20",
+      "VN26_x50"
+    ],
+    "global_perturbation_datasets": [
+      "WRD25",
+      "DTSR14",
+      "PCA11",
+      "BFS46",
+      "FSDM41",
+      "GOIMAI",
+      "WOODAUTH",
+      "BD11"
+    ],
+    "spatial_clean_datasets": [
+      "WRD25",
+      "DTSR14",
+      "PCA11",
+      "VN26_x10",
+      "VN26_x20",
+      "VN26_x50"
+    ],
+    "spatial_perturbation_datasets": ["WRD25", "DTSR14", "PCA11"],
+    "spatial_perturbations": [
+      ["gaussian_blur", 4],
+      ["gaussian_blur", 8],
+      ["gaussian_blur", 12],
+      ["defocus_blur", 5],
+      ["defocus_blur", 11],
+      ["resize", 2.0],
+      ["jpeg", 10],
+      ["jpeg", 50],
+      ["rotation", 45],
+      ["rotation", 180],
+      ["red_channel_shift", -45],
+      ["red_channel_shift", 45],
+      ["green_channel_shift", -45],
+      ["green_channel_shift", 45],
+      ["blue_channel_shift", -45],
+      ["blue_channel_shift", 45],
+      ["gaussian_noise", 0.10],
+      ["shot_noise", 15],
+      ["impulse_noise", 0.05],
+      ["motion_blur", 15],
+      ["zoom_blur", 1.20],
+      ["contrast", 0.50],
+      ["contrast", 1.50],
+      ["pixelate", 0.25],
+      ["scratch", "severe"],
+      ["compound", "mild"],
+      ["compound", "severe"],
+      ["compound_optical", "severe"],
+      ["compound_digital", "severe"],
+      ["compound_field", "severe"]
+    ]
+  },
+  "highres_spatial": {
+    "datasets": ["all"],
+    "backbones": ["all"],
+    "conditions": "full",
+    "n_per_class": 10,
+    "img_w": 1280,
+    "img_h": 1024,
+    "n_fit": 2000,
+    "n_init": 10
+  },
+  "monitor_sensitivity": {
+    "batch_sizes": [8, 16, 32, 64],
+    "ref_sizes": [100, 250, 500, 1000],
+    "repeats": 5,
+    "jobs": 4
+  },
+  "experiments": [
+    "exp1",
+    "exp1b",
+    "exp2",
+    "exp3",
+    "exp4",
+    "exp5",
+    "exp5_full_crossmag",
+    "exp5b",
+    "exp6",
+    "exp7",
+    "exp7_lodo",
+    "exp8",
+    "exp8_baselines",
+    "exp9",
+    "exp10",
+    "exp10_lopo",
+    "exp10_lodo",
+    "exp10_sensitivity",
+    "exp_mixed_effects",
+    "exp_k_ablation",
+    "run_ablations",
+    "hires_spatial",
+    "fig_vn26",
+    "fig_vn26_perturbation"
+  ],
+  "runtime": {
+    "force": false,
+    "resume": true,
+    "install_dependencies": false,
+    "num_workers": 0,
+    "parallel_jobs": 4,
+    "exp10_jobs": 4,
+    "exp10_sensitivity_jobs": 4,
+    "torch_cuda_alloc_conf": "expandable_segments:True"
+  }
+}
