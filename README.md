@@ -4,10 +4,6 @@ Multi-level Representation Drift for diagnosing and monitoring wood species reco
 
 This repository contains the code, processed CSV results, and paper figures for the MRD-Wood experiments. The manuscript studies frozen pretrained visual backbones for computer-vision wood identification under controlled perturbations, Tier-B external datasets, VN26 cross-magnification transfer, and label-free deployment monitoring.
 
-## Repository Name
-
-Suggested short GitHub repository name: `mrd-wood`
-
 ## Main Findings
 
 - Clean accuracy is not a reliable proxy for deployment robustness.
