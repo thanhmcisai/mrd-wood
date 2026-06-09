@@ -45,6 +45,8 @@ EXPERIMENT_MODULES = {
     'exp_k_ablation': 'wood_spatial.experiments.exp_k_ablation',
     'exp_mixed_effects': 'wood_spatial.experiments.exp_mixed_effects',
     'exp_knn_sensitivity': 'wood_spatial.experiments.exp_knn_sensitivity',
+    'exp_competitor_switching': 'wood_spatial.experiments.exp_competitor_switching',
+    'exp_augmentation_probe': 'wood_spatial.experiments.exp_augmentation_probe',
     'exp7_controlled_hierarchical': 'wood_spatial.experiments.exp7_controlled_hierarchical',
     'exp_ci_main_tables': 'wood_spatial.experiments.exp_ci_main_tables',
     'run_ablations': 'wood_spatial.experiments.run_ablations',
@@ -68,6 +70,7 @@ POST_EXTRACT_WAVES = [
     ['exp_k_ablation'],
     ['run_ablations'],
     ['hires_spatial'],
+    ['exp_competitor_switching', 'exp_augmentation_probe'],
     ['fig_vn26', 'fig_vn26_perturbation'],
 ]
 
@@ -217,6 +220,9 @@ def run_parallel_stages(cfg: dict, stages: list, jobs: int, state: dict, resume:
             if stage == 'exp_knn_sensitivity':
                 knn_jobs = int(cfg.get('runtime', {}).get('exp_knn_sensitivity_jobs', jobs))
                 cmd.extend(['--jobs', str(max(1, knn_jobs))])
+            if stage == 'exp_competitor_switching':
+                comp_jobs = int(cfg.get('runtime', {}).get('exp_competitor_switching_jobs', jobs))
+                cmd.extend(['--jobs', str(max(1, comp_jobs))])
             log_file = _log_path(cfg, stage)
             fh = log_file.open('w', buffering=1)
             print(f'  START {stage}: {" ".join(cmd)} | log={log_file}', flush=True)
@@ -818,6 +824,9 @@ def main():
             if stage == 'exp_knn_sensitivity':
                 knn_jobs = int(runtime.get('exp_knn_sensitivity_jobs', jobs))
                 extra_args.extend(['--jobs', str(max(1, knn_jobs))])
+            if stage == 'exp_competitor_switching':
+                comp_jobs = int(runtime.get('exp_competitor_switching_jobs', jobs))
+                extra_args.extend(['--jobs', str(max(1, comp_jobs))])
             run_module(module, extra_args)
 
         mark_done(cfg, state, stage)

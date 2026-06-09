@@ -1,0 +1,2 @@
+protocol,datasets,backbones,n_splits,test_size,split_seed,n_pairs,n_flip,flip_rate,frac_necessary,coverage_certified_safe,flip_rate_in_certified,frac_preserved_certified,n_auc_records,auc_raw_drift,auc_gate_distance,auc_margin_normalized,auc_drift_logit,auc_drift_plus_margin_logit
+nearest_centroid_margin_crossing_v1,"WRD25,DTSR14,PCA11","resnet50,efficientnet_b3,convnext_tiny,swin_tiny,dinov2_b,hrnet32,mobilenetv3",5,0.2,42,9551148,3287059,0.34415328921717053,1.0,0.002805421924149851,0.0,0.004277557359098825,9551148,0.8416134684313633,0.8424426690906724,0.7853827275563655,,

@@ -1,0 +1,2 @@
+protocol,dataset,backbone,head,n_splits,test_size,split_seed,n_conditions,baseline_clean_acc,baseline_pert_acc,baseline_gap,baseline_drift_drop_r,augmented_clean_acc,augmented_pert_acc,augmented_gap,augmented_drift_drop_r,pert_acc_gain,gap_closed_abs
+frozen_ridge_probe_clean_vs_augmented_features_v1,WRD25,dinov2_b,ridge,5,0.2,42,76,0.9680555555555556,0.635032894736842,0.3330226608187134,0.9713861682008896,0.9532407407407406,0.8783199317738791,0.07492080896686162,0.9092940732769186,0.24328703703703713,0.25810185185185175

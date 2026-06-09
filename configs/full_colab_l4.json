@@ -124,6 +124,8 @@
     "exp_k_ablation",
     "run_ablations",
     "hires_spatial",
+    "exp_competitor_switching",
+    "exp_augmentation_probe",
     "fig_vn26",
     "fig_vn26_perturbation"
   ],

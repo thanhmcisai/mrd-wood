@@ -1,0 +1,2 @@
+protocol,datasets,backbones,n_splits,test_size,split_seed,n_pairs,n_flip,flip_rate,auc_total_drift,auc_pred_margin,firstorder_recall,auc_gain_pred_margin_vs_drift
+nearest_centroid_firstorder_margin_v1,"WRD25,DTSR14,PCA11","resnet50,efficientnet_b3,convnext_tiny,swin_tiny,dinov2_b,hrnet32,mobilenetv3",5,0.2,42,9551148,3287059,0.34415328921717053,0.8416134684313633,0.847048273662833,0.532662176127657,0.005434805231469664

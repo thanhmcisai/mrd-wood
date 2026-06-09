@@ -1,0 +1,2 @@
+rule,protocol,n_splits,test_size,split_seed,mean_clean_acc,mean_pert_acc,mean_drop,feature_drop_pearson_r,feature_drop_pearson_p,feature_drop_spearman_rho,feature_drop_spearman_p,n
+linear_probe,split_disjoint_v1,5,0.2,42,0.9245906551010573,0.6854142358784873,0.23917641922257024,0.9223527645476369,0.0,0.9417779321331475,0.0,1596
