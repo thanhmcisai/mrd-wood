@@ -1,0 +1,2 @@
+monitor,synthetic_threshold,threshold_source,severity_spearman_by_condition_mean,clean_false_alarm_rate,real_shift_alarm_rate,tierc_cross_source_alarm_rate,n_records
+ref_mmd_rbf,0.075576901435852,results/csv/exp10_reference_monitor_auc.csv,0.3,0.0,0.8571428571428571,1.0,2751

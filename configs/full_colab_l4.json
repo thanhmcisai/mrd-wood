@@ -8,7 +8,8 @@
   "datasets": {
     "tier_a": ["WRD25", "DTSR14", "PCA11"],
     "tier_b": ["BFS46", "FSDM41", "GOIMAI", "WOODAUTH", "BD11"],
-    "tier_c": ["VN26_x10", "VN26_x20", "VN26_x50"]
+    "tier_c_cross_source": [["BFS46", "FSDM41"], ["DTSR14", "WOODAUTH"]],
+    "tier_d": ["VN26_x10", "VN26_x20", "VN26_x50"]
   },
   "backbones": [
     "resnet50",
@@ -109,6 +110,9 @@
     "exp4",
     "exp5",
     "exp5_full_crossmag",
+    "exp5_crossmag_asymmetry",
+    "exp_tierc_cross_source",
+    "exp_source_vs_species_probe",
     "exp5b",
     "exp6",
     "exp7",
@@ -120,6 +124,12 @@
     "exp10_lopo",
     "exp10_lodo",
     "exp10_sensitivity",
+    "exp_monitor_on_real_shift",
+    "exp_cross_space_drift",
+    "exp_monitor_severity_dissociation",
+    "exp_mmd_gamma_sensitivity",
+    "exp_mmd_confound_and_sign",
+    "exp_matched_class_dissociation",
     "exp_mixed_effects",
     "exp_k_ablation",
     "run_ablations",
@@ -137,6 +147,9 @@
     "parallel_jobs": 4,
     "exp10_jobs": 4,
     "exp10_sensitivity_jobs": 4,
+    "exp_mmd_gamma_sensitivity_jobs": 2,
+    "exp_mmd_confound_jobs": 2,
+    "exp_matched_class_jobs": 4,
     "torch_cuda_alloc_conf": "expandable_segments:True"
   }
 }

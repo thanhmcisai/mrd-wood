@@ -79,6 +79,23 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
         CsvSpec("exp5_full_crossmag_accuracy.csv"),
         CsvSpec("exp5_full_crossmag_summary.csv"),
     ],
+    "exp5_crossmag_asymmetry": [
+        CsvSpec("exp5_crossmag_asymmetry_by_backbone.csv"),
+        CsvSpec("exp5_crossmag_asymmetry_by_pair.csv"),
+        CsvSpec("exp5_crossmag_ratio_summary.csv"),
+        CsvSpec("exp5_crossmag_drift_drop.csv"),
+        CsvSpec("exp5_crossmag_asymmetry_summary.csv"),
+    ],
+    "exp_tierc_cross_source": [
+        CsvSpec("exp_tierc_cross_source_by_cell.csv"),
+        CsvSpec("exp_tierc_cross_source_transfer.csv"),
+        CsvSpec("exp_tierc_cross_source_by_pair.csv"),
+        CsvSpec("exp_tierc_cross_source_summary.csv"),
+    ],
+    "exp_source_vs_species_probe": [
+        CsvSpec("exp_source_vs_species_probe_by_backbone.csv"),
+        CsvSpec("exp_source_vs_species_probe_summary.csv"),
+    ],
     "exp5b": [
         CsvSpec("exp5b_sgi_by_mag.csv"),
         CsvSpec("exp5b_crossmag_csi.csv"),
@@ -137,6 +154,34 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
         CsvSpec("exp10_monitor_sensitivity_scores.csv"),
         CsvSpec("exp10_monitor_sensitivity_auc.csv"),
     ],
+    "exp_monitor_on_real_shift": [
+        CsvSpec("exp_monitor_on_real_shift_scores.csv"),
+        CsvSpec("exp_monitor_on_real_shift_by_condition.csv"),
+        CsvSpec("exp_monitor_on_real_shift_summary.csv"),
+    ],
+    "exp_cross_space_drift": [
+        CsvSpec("exp_cross_space_drift_matrix.csv"),
+        CsvSpec("exp_cross_space_drift_summary.csv"),
+    ],
+    "exp_monitor_severity_dissociation": [
+        CsvSpec("exp_monitor_severity_dissociation_by_condition.csv"),
+        CsvSpec("exp_monitor_severity_dissociation_summary.csv"),
+    ],
+    "exp_mmd_gamma_sensitivity": [
+        CsvSpec("exp_mmd_gamma_sensitivity_by_condition.csv"),
+        CsvSpec("exp_mmd_gamma_sensitivity_summary.csv"),
+    ],
+    "exp_mmd_confound_and_sign": [
+        CsvSpec("exp_mmd_confound_terms.csv"),
+        CsvSpec("exp_mmd_confound_regression.csv"),
+        CsvSpec("exp_mmd_class_count_matched.csv"),
+        CsvSpec("exp_mmd_confound_summary.csv"),
+    ],
+    "exp_matched_class_dissociation": [
+        CsvSpec("exp_matched_class_dissociation_by_cell.csv"),
+        CsvSpec("exp_matched_class_dissociation_by_seed.csv"),
+        CsvSpec("exp_matched_class_dissociation_summary.csv"),
+    ],
     "exp10_operating_points": [
         CsvSpec("exp10_operating_points_fixed_fpr.csv"),
         CsvSpec("exp10_lopo_operating_points.csv"),
@@ -179,6 +224,33 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
 
 
 STAGE_FIGURES: dict[str, list[str]] = {
+    "exp5_crossmag_asymmetry": [
+        "cross_magnification_asymmetry",
+    ],
+    "exp_tierc_cross_source": [
+        "tierc_cross_source_shift",
+    ],
+    "exp_source_vs_species_probe": [
+        "source_vs_species_probe",
+    ],
+    "exp_monitor_on_real_shift": [
+        "monitor_on_real_shift",
+    ],
+    "exp_cross_space_drift": [
+        "cross_space_drift",
+    ],
+    "exp_monitor_severity_dissociation": [
+        "monitor_severity_dissociation",
+    ],
+    "exp_mmd_gamma_sensitivity": [
+        "mmd_gamma_sensitivity",
+    ],
+    "exp_mmd_confound_and_sign": [
+        "mmd_confound_and_class_count",
+    ],
+    "exp_matched_class_dissociation": [
+        "matched_class_dissociation",
+    ],
     "fig_vn26": [
         "fig4_spatial_cluster_panels_VN26",
         "fig6_cam_cluster_overlay_VN26",

@@ -30,7 +30,18 @@ EXPERIMENT_MODULES = {
     'exp4': 'wood_spatial.experiments.exp4_cross_dataset',
     'exp5': 'wood_spatial.experiments.exp5_magnification',
     'exp5_full_crossmag': 'wood_spatial.experiments.exp5_full_crossmag',
+    'exp5_crossmag_asymmetry': 'wood_spatial.experiments.exp5_crossmag_asymmetry',
+    'exp_tierc_cross_source_check': 'wood_spatial.experiments.exp_tierc_cross_source_shift',
+    'exp_tierc_cross_source': 'wood_spatial.experiments.exp_tierc_cross_source_shift',
+    'exp_source_vs_species_probe': 'wood_spatial.experiments.exp_source_vs_species_probe',
+    'exp_monitor_on_real_shift': 'wood_spatial.experiments.exp_monitor_on_real_shift',
+    'exp_cross_space_drift': 'wood_spatial.experiments.exp_cross_space_drift',
+    'exp_monitor_severity_dissociation': 'wood_spatial.experiments.exp_monitor_severity_dissociation',
+    'exp_mmd_gamma_sensitivity': 'wood_spatial.experiments.exp_mmd_gamma_sensitivity',
+    'exp_mmd_confound_and_sign': 'wood_spatial.experiments.exp_mmd_confound_and_sign',
+    'exp_matched_class_dissociation': 'wood_spatial.experiments.exp_matched_class_dissociation',
     'exp5b': 'wood_spatial.experiments.exp5b_crossmag_spatial',
+    'exp_species_overlap': 'wood_spatial.experiments.exp_species_overlap',
     'exp6': 'wood_spatial.experiments.exp6_multilevel_failure',
     'exp7': 'wood_spatial.experiments.exp7_path_analysis',
     'exp7_lodo': 'wood_spatial.experiments.exp7_lodo_feature_drift',
@@ -64,8 +75,10 @@ POST_EXTRACT_WAVES = [
     ['exp6'],
     ['exp7', 'exp8'],
     ['exp10'],
-    ['exp5_full_crossmag', 'exp7_lodo', 'exp10_lopo', 'exp10_lodo', 'exp_mixed_effects'],
-    ['exp10_sensitivity'],
+    ['exp5_full_crossmag', 'exp5_crossmag_asymmetry', 'exp_tierc_cross_source', 'exp_source_vs_species_probe', 'exp7_lodo', 'exp10_lopo', 'exp10_lodo', 'exp_mixed_effects'],
+    ['exp10_sensitivity', 'exp_monitor_on_real_shift', 'exp_cross_space_drift', 'exp_monitor_severity_dissociation', 'exp_mmd_gamma_sensitivity'],
+    ['exp_mmd_confound_and_sign'],
+    ['exp_matched_class_dissociation'],
     ['exp_knn_sensitivity', 'exp10_operating_points', 'exp7_controlled_hierarchical', 'exp_ci_main_tables'],
     ['exp_k_ablation'],
     ['run_ablations'],
@@ -223,6 +236,32 @@ def run_parallel_stages(cfg: dict, stages: list, jobs: int, state: dict, resume:
             if stage == 'exp_competitor_switching':
                 comp_jobs = int(cfg.get('runtime', {}).get('exp_competitor_switching_jobs', jobs))
                 cmd.extend(['--jobs', str(max(1, comp_jobs))])
+            if stage == 'exp5_crossmag_asymmetry':
+                cmd.append('--real')
+            if stage == 'exp_tierc_cross_source':
+                cmd.append('--real')
+            if stage == 'exp_source_vs_species_probe':
+                cmd.append('--real')
+            if stage == 'exp_monitor_on_real_shift':
+                cmd.append('--real')
+            if stage == 'exp_cross_space_drift':
+                cmd.append('--real')
+            if stage == 'exp_monitor_severity_dissociation':
+                cmd.append('--real')
+            if stage == 'exp_mmd_gamma_sensitivity':
+                cmd.append('--real')
+                gamma_jobs = int(cfg.get('runtime', {}).get('exp_mmd_gamma_sensitivity_jobs', 2))
+                cmd.extend(['--jobs', str(max(1, gamma_jobs))])
+            if stage == 'exp_mmd_confound_and_sign':
+                cmd.append('--real')
+                confound_jobs = int(cfg.get('runtime', {}).get('exp_mmd_confound_jobs', 2))
+                cmd.extend(['--jobs', str(max(1, confound_jobs))])
+            if stage == 'exp_matched_class_dissociation':
+                cmd.append('--real')
+                matched_jobs = int(cfg.get('runtime', {}).get('exp_matched_class_jobs', 4))
+                cmd.extend(['--jobs', str(max(1, matched_jobs))])
+            if stage == 'exp_tierc_cross_source_check':
+                cmd.append('--check-only')
             log_file = _log_path(cfg, stage)
             fh = log_file.open('w', buffering=1)
             print(f'  START {stage}: {" ".join(cmd)} | log={log_file}', flush=True)
@@ -780,6 +819,13 @@ def main():
     stage_resume = resume if selected is None else False
 
     stages = ['install', 'verify', 'extract'] + cfg['experiments']
+    if selected is not None:
+        known = {'install', 'verify', 'extract'} | set(EXPERIMENT_MODULES)
+        unknown = sorted(selected - known)
+        if unknown:
+            raise SystemExit(f"Unknown stage(s): {', '.join(unknown)}")
+        extras = [stage for stage in selected if stage not in stages]
+        stages.extend(sorted(extras))
 
     if args.parallel_post:
         t0 = time.time()
@@ -827,6 +873,32 @@ def main():
             if stage == 'exp_competitor_switching':
                 comp_jobs = int(runtime.get('exp_competitor_switching_jobs', jobs))
                 extra_args.extend(['--jobs', str(max(1, comp_jobs))])
+            if stage == 'exp5_crossmag_asymmetry':
+                extra_args.append('--real')
+            if stage == 'exp_tierc_cross_source':
+                extra_args.append('--real')
+            if stage == 'exp_source_vs_species_probe':
+                extra_args.append('--real')
+            if stage == 'exp_monitor_on_real_shift':
+                extra_args.append('--real')
+            if stage == 'exp_cross_space_drift':
+                extra_args.append('--real')
+            if stage == 'exp_monitor_severity_dissociation':
+                extra_args.append('--real')
+            if stage == 'exp_mmd_gamma_sensitivity':
+                extra_args.append('--real')
+                gamma_jobs = int(runtime.get('exp_mmd_gamma_sensitivity_jobs', 2))
+                extra_args.extend(['--jobs', str(max(1, gamma_jobs))])
+            if stage == 'exp_mmd_confound_and_sign':
+                extra_args.append('--real')
+                confound_jobs = int(runtime.get('exp_mmd_confound_jobs', 2))
+                extra_args.extend(['--jobs', str(max(1, confound_jobs))])
+            if stage == 'exp_matched_class_dissociation':
+                extra_args.append('--real')
+                matched_jobs = int(runtime.get('exp_matched_class_jobs', 4))
+                extra_args.extend(['--jobs', str(max(1, matched_jobs))])
+            if stage == 'exp_tierc_cross_source_check':
+                extra_args.append('--check-only')
             run_module(module, extra_args)
 
         mark_done(cfg, state, stage)

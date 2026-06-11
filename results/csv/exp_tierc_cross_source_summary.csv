@@ -1,0 +1,2 @@
+tier_a_csv,tier_a_available,tier_a_slope,tier_a_intercept,crosssource_slope,crosssource_intercept,crosssource_drift_drop_r,crosssource_to_tier_a_slope_ratio,crosssource_mean_abs_residual_on_tier_a_line,n_crosssource_records
+/content/drive/MyDrive/NCS/results_v5_k3_full/csv/exp1b_feature_geometry.csv,True,1.0390539571301998,-0.07024880999645214,0.30231467716519833,0.7801922473160571,0.33091499453149176,0.290951855859509,0.4878914579344582,392

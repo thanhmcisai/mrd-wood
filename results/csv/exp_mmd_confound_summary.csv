@@ -1,0 +1,2 @@
+large_pair,small_pair,large_pair_raw_mmd2,small_pair_raw_mmd2,large_pair_matched_4class_mmd2_mean,large_pair_matched_4class_mmd2_std,large_pair_matched_4class_mmd2_ci_low,large_pair_matched_4class_mmd2_ci_high,fraction_seeds_inversion_survives,n_seeds,matched_species_count
+BFS46<->FSDM41,DTSR14<->WOODAUTH,0.10176784651620048,0.19281722818102157,0.2087830288069589,0.04071740835350963,0.15776809070791517,0.27945755209241596,0.45,20,4

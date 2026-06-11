@@ -390,7 +390,10 @@ ALL_DATASETS = {
 # Dataset tier groupings
 TIER_A = ['WRD25', 'DTSR14', 'PCA11']
 TIER_B = ['BFS46', 'FSDM41', 'GOIMAI', 'WOODAUTH', 'BD11']
+# Legacy name: older scripts use TIER_C for VN26 magnification subsets.
 TIER_C = ['VN26_x10', 'VN26_x20', 'VN26_x50']
+TIER_D = TIER_C
+CROSS_SOURCE_PAIRS = [('BFS46', 'FSDM41'), ('DTSR14', 'WOODAUTH')]
 
 DS_LABEL = {
     'WRD25': 'WRD25 (Phone+20x)', 'DTSR14': 'DTSR14 (Scanner)', 'PCA11': 'PCA11 (Magnifier)',

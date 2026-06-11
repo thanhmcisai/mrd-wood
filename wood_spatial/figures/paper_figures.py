@@ -1,6 +1,4 @@
-"""
-Publication figure generators for the multi-level representation failure frame.
-"""
+"""Publication figure generators for the representation-drift analysis."""
 import logging
 
 import cv2
@@ -447,6 +445,8 @@ def plot_cam_cluster_overlay(ds: str = 'WRD25', sample_idx: int = 0):
 
 def plot_feature_geometry_failure():
     df = pd.read_csv(V4_CSV / 'exp1b_feature_geometry.csv')
+    partial = pd.read_csv(V4_CSV / 'exp7_partial_correlations_severity.csv')
+    hierarchical = pd.read_csv(V4_CSV / 'exp7_controlled_hierarchical_r2.csv')
     df = df.copy()
     df['figure_group'] = df['perturbation'].map(_figure_group)
     pert = df.groupby('figure_group', as_index=False).agg(
@@ -474,7 +474,19 @@ def plot_feature_geometry_failure():
         axes[1, 1].scatter(sub['feature_drift'], sub['drop'], alpha=0.4, s=14,
                            color=BB_COLORS.get(bb), label=BB_LABEL.get(bb, bb))
     r_val = df[['feature_drift', 'drop']].dropna().corr().iloc[0, 1]
-    axes[1, 1].text(0.97, 0.05, f'r={r_val:.3f}', transform=axes[1, 1].transAxes,
+    partial_r = float(
+        partial.loc[partial['metric'].eq('feature_drift'), 'r_partial_severity'].iloc[0]
+    )
+    delta_r2 = float(
+        hierarchical.loc[
+            hierarchical['model'].eq('M1: + feature drift'), 'delta_r2'
+        ].iloc[0]
+    )
+    annotation = (
+        f'raw same-space r={r_val:.3f} (upper bound)\n'
+        f'controlled partial r={partial_r:.3f}; ΔR²={delta_r2:.3f}'
+    )
+    axes[1, 1].text(0.97, 0.05, annotation, transform=axes[1, 1].transAxes,
                     ha='right', va='bottom', fontsize=8,
                     bbox=dict(boxstyle='round,pad=0.18', fc='white', ec='0.85', alpha=0.82))
     axes[1, 1].set_xlabel('Feature drift (cosine distance)')
@@ -496,6 +508,11 @@ def plot_multilevel_correlation():
         'delta_fgcs': 'ΔFGCS', 'cam_shift_jsd': 'CAM shift (JSD)',
         'csi': 'CSI (spatial stability)', 'spatial_instability': 'Spatial instability',
         'sgi_clean': 'SGI (granularity)', 'cam_entropy_clean': 'CAM entropy',
+        'csi_hungarian': 'CSI-H (matched stability)',
+        'spatial_instability_hungarian': 'Matched spatial instability',
+        'csi_permutation_gap': 'CSI permutation gap',
+        'cam_shift_js_distance': 'CAM shift (JS distance)',
+        'cam_shift_js_divergence': 'CAM shift (JS divergence)',
     }
     df['label'] = df['metric'].map(label_map).fillna(df['metric'])
     df = df.sort_values('r', key=lambda s: s.abs(), ascending=True)
@@ -677,7 +694,7 @@ def plot_roc_failure_detection():
     ax2.set_xlabel('AUC-ROC')
     ax2.tick_params(axis='y', labelsize=8)
     for i, (_, row) in enumerate(df_auc_s.iterrows()):
-        ax2.text(row['auc_roc'] - 0.01, i, f'{row["auc_roc"]:.4f}',
+        ax2.text(row['auc_roc'] - 0.01, i, f'{row["auc_roc"]:.3f}',
                  va='center', ha='right', fontsize=8, color='white')
     ax2.set_xlim(0.4, 1.05)
     fig.subplots_adjust(left=0.07, right=0.99, top=0.98, bottom=0.14, wspace=0.34)

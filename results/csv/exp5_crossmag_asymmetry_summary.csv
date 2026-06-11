@@ -1,0 +1,2 @@
+tier_a_csv,tier_a_available,tier_a_slope,tier_a_intercept,crossmag_slope,crossmag_intercept,crossmag_drift_drop_r,crossmag_to_tier_a_slope_ratio,crossmag_mean_abs_residual_on_tier_a_line,n_crossmag_records,n_crossmag_missing_drift
+/content/drive/MyDrive/NCS/results_v5_k3_full/csv/exp1b_feature_geometry.csv,True,1.0390539571301998,-0.07024880999645214,0.8405283292700511,0.34280264099563074,0.5782208994012198,0.8089361707370195,0.3365705058561179,42,0
