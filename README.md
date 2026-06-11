@@ -1,82 +1,100 @@
 # MRD-Wood
 
-Monitoring Representation Drift for Wood Recognition: diagnosing and monitoring wood species recognition failures under acquisition shift.
+Code and results for:
 
-This repository contains the code, processed CSV results, and paper figures for the MRD-Wood experiments. The manuscript studies frozen pretrained visual backbones for computer-vision wood identification under controlled perturbations, Tier-B external datasets, VN26 cross-magnification transfer, and label-free deployment monitoring.
+**When Wood Recognition Fails: Cross-Source and Cross-Magnification Boundaries of Acquisition Shift**
+
+MRD-Wood (Mapping Representation Drift for Wood Recognition) is an empirical
+diagnostic protocol for studying acquisition-shift failure in frozen visual
+representations. It is not a new classifier or drift detector. The repository
+contains the experiment package, processed CSV outputs, paper figures, and
+manuscript source.
+
+![MRD-Wood overview](results/figures/mrd_wood_overview_figure1.png)
+
+## Scope
+
+The study evaluates seven pretrained backbones across four experimental tiers:
+
+| Tier | Data | Role |
+|---|---|---|
+| A | WRD25, DTSR14, PCA11 | Paired synthetic perturbations and controlled drift analysis |
+| B | BFS46, FSDM41, GOIMAI, WOODAUTH, BD11 | External-source validation under the same perturbation suite |
+| C | BFS46/FSDM41, DTSR14/WOODAUTH | Real cross-source transfer over shared accepted species |
+| D | VN26 x10/x20/x50 | Real cross-magnification transfer and asymmetry |
+
+The evaluated backbones are ResNet-50, EfficientNet-B3, ConvNeXt-T, Swin-T,
+DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 ## Main Findings
 
-- Clean accuracy is not a reliable proxy for deployment robustness.
-- DINOv2-B and EfficientNet-B3 are strongest under synthetic perturbations, while HRNet-32 has the highest clean accuracy.
-- Paired feature drift is the strongest representation-level signal for accuracy degradation.
-- The drift/drop relationship remains strong under external Tier-B validation.
-- VN26 cross-magnification transfer exposes a separate scale-shift failure mode.
-- RBF-MMD reference-bank monitoring detects batch-level failure without target labels.
+- After controlling for dataset, backbone, perturbation family, and severity,
+  feature drift retains a positive association with accuracy drop
+  (`partial r = 0.623`, `Delta R2 = 0.031`).
+- The transferable cross-space component is smaller (`partial r = 0.178`);
+  pooled same-space `r = 0.908` is treated as an upper-bound association.
+- Frozen features encode acquisition source more reliably than cross-source
+  species identity.
+- Shared-species transfer nearly collapses for BFS46/FSDM41
+  (`accuracy = 0.008-0.013`) and remains limited for DTSR14/WOODAUTH.
+- VN26 transfer is asymmetric and non-monotone across magnification pairs, with
+  x50 as the main cross-scale failure locus.
+- A standard reference-bank RBF-MMD monitor reaches batch-level
+  `ROC-AUC = 0.968` and `F1 = 0.909` on synthetic shifts and flags 60/70
+  real-shift batches. Its raw magnitude is an acquisition-mismatch score, not a
+  calibrated estimate of accuracy loss.
 
-## Key Results
+## Selected Results
 
-| Result | Value |
-|---|---:|
-| Feature drift vs. accuracy drop | Pearson `r = 0.908`, Spearman `rho = 0.937` |
-| Tier-B feature drift vs. drop | `r = 0.870` |
-| Partial correlation after grouped controls | `r = 0.795` |
-| RBF-MMD deployment monitor | ROC-AUC `0.968`, F1 `0.909` |
-| Paired feature-drift oracle | ROC-AUC `0.976`, F1 `0.919` |
-| VN26 x20 -> x50 transfer | Accuracy `0.160` |
-| Negative-control deblur | accuracy `0.469 -> 0.297`, drift `0.488 -> 0.638` |
+### Controlled Drift and Cross-Space Checks
 
-## Figures
+![Feature geometry and failure](results/figures/fig3_feature_geometry_failure.png)
 
-### Robustness Under Perturbation
+![Cross-space drift](results/figures/cross_space_drift.png)
 
-![Accuracy heatmap](results/figures/fig2a_accuracy_heatmap.png)
+### Real Cross-Source Shift
 
-![Severity curves](results/figures/fig2b_severity_curves.png)
+![Source versus species probe](results/figures/source_vs_species_probe.png)
 
-![Nemenyi CD diagram](results/figures/fig5_nemenyi_cd_diagram.png)
+![Tier-C cross-source transfer](results/figures/tierc_cross_source_shift.png)
 
-### Representation Drift and Failure
+### Cross-Magnification Shift
 
-![Feature geometry failure](results/figures/fig3_feature_geometry_failure.png)
+![Cross-magnification asymmetry](results/figures/cross_magnification_asymmetry.png)
 
-![Hierarchical R2](results/figures/fig7_hierarchical_r2.png)
-
-![Partial correlations](results/figures/fig9_partial_correlations.png)
-
-### Monitoring
+### Label-Free Monitoring and Its Limits
 
 ![Failure detection ROC](results/figures/fig8_roc_failure_detection.png)
 
-### External and Cross-Magnification Validation
+![Monitor on real shifts](results/figures/monitor_on_real_shift.png)
 
-![Tier-B validation](results/figures/fig11_tierb_validation.png)
+![MMD severity dissociation](results/figures/monitor_severity_dissociation.png)
 
-![Cross-magnification spatial analysis](results/figures/fig12_crossmag_spatial.png)
+![MMD confound and class-count controls](results/figures/mmd_confound_and_class_count.png)
 
-### Spatial and CAM Diagnostics
+![Matched-class dissociation](results/figures/matched_class_dissociation.png)
 
-![VN26 spatial clusters](results/figures/fig4_spatial_cluster_panels_VN26.png)
-
-![VN26 perturbation clusters](results/figures/fig4b_perturbation_VN26x20.png)
-
-![VN26 CAM clusters](results/figures/fig6_cam_cluster_overlay_VN26.png)
-
-![Multilevel correlations](results/figures/fig_multilevel_correlations.png)
-
-![CSI vs drop](results/figures/fig_csi_vs_drop.png)
-
-![CAM shift vs drop](results/figures/fig_cam_shift_vs_drop.png)
-
-## Included Results
-
-The repository keeps processed CSV and PNG outputs in:
+## Repository Layout
 
 ```text
-results/csv/
-results/figures/
+wood_spatial/
+  experiments/       Reproducible experiment modules
+  figures/           Paper-figure generation
+scripts/
+  run_full_colab.py  End-to-end Colab runner
+  check_full_run_outputs.py
+configs/
+  full_colab_l4.json
+results/
+  csv/               Processed numerical outputs tracked by git
+  figures/           PNG figures tracked by git
+main.tex             Manuscript source
+references.bib       Bibliography
 ```
 
-Large datasets, feature caches, model weights, LaTeX build artifacts, third-party binaries, downloaded archives, and PDFs are ignored by `.gitignore`.
+Datasets, feature caches, model weights, `results_v4/`, LaTeX build artifacts,
+third-party binaries, and generated experiment PDFs are excluded by
+`.gitignore`. The tracked `main.pdf` is a manuscript snapshot.
 
 ## Setup
 
@@ -84,7 +102,7 @@ Large datasets, feature caches, model weights, LaTeX build artifacts, third-part
 pip install -r requirements.txt
 ```
 
-Dataset paths are configured through environment variables or JSON config files:
+Configure local paths with environment variables:
 
 ```bash
 export WOOD_BASE=/path/to/workdir
@@ -92,7 +110,11 @@ export WOOD_DATASETS_DIR=/path/to/datasets
 export WOOD_RESULTS_DIR=/path/to/results
 ```
 
-## Full Colab Run
+The Colab profile uses paths defined in `configs/full_colab_l4.json`.
+
+## Run Experiments
+
+Full resumable Colab run:
 
 ```bash
 python scripts/run_full_colab.py \
@@ -100,27 +122,42 @@ python scripts/run_full_colab.py \
   --resume
 ```
 
-To check whether expected outputs are present:
+Run selected stages:
+
+```bash
+python scripts/run_full_colab.py \
+  --config configs/full_colab_l4.json \
+  --only exp_tierc_cross_source \
+         exp_source_vs_species_probe \
+         exp_monitor_on_real_shift
+```
+
+Validate Tier-C species overlap and caches before the real run:
+
+```bash
+python -u -m wood_spatial.experiments.exp_tierc_cross_source_shift \
+  --check-only
+```
+
+Check expected outputs:
 
 ```bash
 python scripts/check_full_run_outputs.py \
   --config configs/full_colab_l4.json \
-  --results-dir results \
-  --no-state
-```
-
-Expected current status:
-
-```text
-OK=105  WARN=0  FAIL=0
+  --no-paper-figures \
+  --show-ok
 ```
 
 ## Manuscript
 
-The manuscript source is `main.tex`. Build locally with Tectonic if available:
+Build with the bundled Tectonic binary when available:
 
 ```bash
-./third_party/tectonic-musl/tectonic --keep-logs --keep-intermediates main.tex
+./third_party/tectonic-musl/tectonic \
+  --keep-logs \
+  --keep-intermediates \
+  main.tex
 ```
 
-The generated PDF is ignored by git; rebuild it locally when needed.
+The manuscript uses the Elsevier CAS single-column template. Generated PDFs are
+not required to reproduce the numerical results.
