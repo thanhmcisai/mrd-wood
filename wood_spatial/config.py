@@ -15,7 +15,10 @@ BASE = Path(os.environ.get('WOOD_BASE', Path(__file__).resolve().parent.parent))
 # ── Derived paths ───────────────────────────────────────────────────────────
 DATASET_ROOT = Path(os.environ.get('WOOD_DATASETS_DIR', BASE / 'dataset'))
 V2_CACHE_DIR = BASE / 'results_v2' / 'feature_cache'   # reuse existing caches
-V4_DIR       = Path(os.environ.get('WOOD_RESULTS_DIR', BASE / 'results_v4'))
+# ``results/`` is the canonical local paper-output tree. Colab and external
+# runs must set WOOD_RESULTS_DIR explicitly (the full-run driver does this from
+# its JSON config), so local analysis cannot silently read legacy results_v4.
+V4_DIR       = Path(os.environ.get('WOOD_RESULTS_DIR', BASE / 'results'))
 V4_FEAT_CACHE   = V4_DIR / 'feature_cache'
 V4_SPATIAL_CACHE = V4_DIR / 'spatial_cache'
 V4_GRADCAM_CACHE = V4_DIR / 'gradcam_cache'

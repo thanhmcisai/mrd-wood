@@ -45,28 +45,18 @@ import itertools
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BASE, BB_LABEL, BB_ORDER, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_LABEL, BB_ORDER
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, write_provenance
 
 BACKBONES = list(BB_ORDER)
 
 
 def _io_dirs():
-    csv_dir = V4_CSV
-    fig_dir = V4_FIGURES
-    if (BASE / "results" / "csv").exists():
-        csv_dir = BASE / "results" / "csv"
-        fig_dir = BASE / "results" / "figures"
-    csv_dir.mkdir(parents=True, exist_ok=True)
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    return csv_dir, fig_dir
+    return csv_dir(), figure_dir()
 
 
 def _find_csv(name: str):
-    csv_dir, _fig_dir = _io_dirs()
-    for path in (csv_dir / name, V4_CSV / name, BASE / "results" / "csv" / name):
-        if path.exists():
-            return path
-    return csv_dir / name
+    return require_csv(name)
 
 
 # --------------------------------------------------------------------------- #
@@ -290,31 +280,85 @@ def save_outputs(out):
     }]).to_csv(csv_dir / "exp_cross_space_drift_summary.csv", index=False)
 
 
+def load_saved_outputs():
+    matrix = pd.read_csv(require_csv("exp_cross_space_drift_matrix.csv"))
+    summary = pd.read_csv(require_csv("exp_cross_space_drift_summary.csv")).iloc[0]
+    bbs = [
+        backbone for backbone in BACKBONES
+        if backbone in set(matrix["drift_backbone"]).intersection(
+            matrix["drop_backbone"]
+        )
+    ]
+    pivot = matrix.pivot(
+        index="drift_backbone", columns="drop_backbone", values="pearson_r"
+    ).reindex(index=bbs, columns=bbs)
+    return {
+        "backbones": bbs,
+        "matrix": pivot.to_numpy(dtype=float),
+        **{key: float(value) for key, value in summary.items()},
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--real", action="store_true")
+    ap.add_argument(
+        "--from-csv",
+        action="store_true",
+        help="Regenerate the figure from canonical saved CSVs.",
+    )
     ap.add_argument("--fig", default="cross_space_drift.png")
     ap.add_argument("--no-fig", action="store_true")
     args = ap.parse_args()
-    if args.real:
+    if args.from_csv:
+        out = load_saved_outputs()
+    elif args.real:
         drift, drop, meta = load_drift_drop_matrices()
     else:
         if not args.demo:
             print("[no mode given] defaulting to --demo\n")
         drift, drop, meta = make_demo()
-    out = analyze(drift, drop, meta)
+    if not args.from_csv:
+        out = analyze(drift, drop, meta)
     print_summary(out)
     if not args.no_fig:
         fig = args.fig
-        if args.real and fig == "cross_space_drift.png":
+        if (args.real or args.from_csv) and fig == "cross_space_drift.png":
             _csv_dir, fig_dir = _io_dirs()
             fig = str(fig_dir / fig)
         make_figure(out, fig)
+        if args.from_csv:
+            write_provenance(
+                "exp_cross_space_drift_figure",
+                [Path(fig), Path(fig).with_suffix(".pdf")],
+                protocol="render_from_canonical_cross_space_csv_v1",
+                parameters={"source": "saved_csv"},
+                inputs=[
+                    require_csv("exp_cross_space_drift_matrix.csv"),
+                    require_csv("exp_cross_space_drift_summary.csv"),
+                ],
+            )
     if args.real:
         save_outputs(out)
         csv_dir, _fig_dir = _io_dirs()
+        outputs = [
+            csv_dir / "exp_cross_space_drift_matrix.csv",
+            csv_dir / "exp_cross_space_drift_summary.csv",
+        ]
+        if not args.no_fig:
+            outputs.extend([Path(fig), Path(fig).with_suffix(".pdf")])
+        write_provenance(
+            "exp_cross_space_drift",
+            outputs,
+            protocol="aligned_cross_space_tier_a_v1",
+            parameters={
+                "controls": ["dataset", "perturbation_family", "severity"],
+                "backbones": BACKBONES,
+            },
+            inputs=[require_csv("exp1b_feature_geometry.csv")],
+        )
         print(f"\nSaved CSV outputs to {csv_dir}")
 
 

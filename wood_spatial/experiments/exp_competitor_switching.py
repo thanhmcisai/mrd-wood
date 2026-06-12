@@ -103,7 +103,7 @@ def analyze(clean_train_feats, clean_train_labels,
         "switch_winner_in_top5": float(np.mean(wr[switch] <= 5)) if switch.any() else float("nan"),
         "median_clean_rank_switch": float(np.median(wr[switch])) if switch.any() else float("nan"),
     }
-    # per-family first-order share
+    # Per-family share for which the clean nearest competitor is the final winner.
     by_fam = {}
     for f in sorted(set(fam.tolist())):
         m = fam == f
@@ -141,12 +141,12 @@ def _figure(wr, by_fam, fig_path):
 def report(res):
     print("\n=== TIER-2 competitor-switching analysis ===")
     print(f"  flips analyzed: {res.get('n_flips')}")
-    print(f"  first-order (winner=c*)      : {100*res['first_order_frac']:.1f}%  (-> matches 53.3%)")
+    print(f"  nearest competitor wins      : {100*res['first_order_frac']:.1f}%")
     print(f"  competitor-switching         : {100*res['switch_frac']:.1f}%")
     print(f"   .. winner in clean top-3    : {100*res['switch_winner_in_top3']:.1f}%")
     print(f"   .. winner in clean top-5    : {100*res['switch_winner_in_top5']:.1f}%")
     print(f"   .. median clean rank        : {res['median_clean_rank_switch']:.1f}")
-    print("  first-order share by family:")
+    print("  nearest-competitor winner share by family:")
     for f, v in res["first_order_frac_by_family"].items():
         print(f"     {f:<16s}: {100*v:.1f}%")
 

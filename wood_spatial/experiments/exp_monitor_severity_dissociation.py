@@ -35,10 +35,12 @@ is a shift detector, not a calibrated severity gauge.
 Verify with `--demo`; wire load_conditions() to caches for `--real`.
 """
 import argparse
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BASE, BB_ORDER, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_ORDER
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, stable_seed, write_provenance
 from wood_spatial.experiments.exp_monitor_on_real_shift import _cap, _load_norm_cache
 from wood_spatial.experiments.exp_tierc_cross_source_shift import (
     PAIRS as TIER_C_PAIRS,
@@ -62,31 +64,11 @@ CONDITIONS = [
 
 
 def _io_dirs():
-    csv_dir = V4_CSV
-    fig_dir = V4_FIGURES
-    if (BASE / "results" / "csv").exists():
-        csv_dir = BASE / "results" / "csv"
-        fig_dir = BASE / "results" / "figures"
-    csv_dir.mkdir(parents=True, exist_ok=True)
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    return csv_dir, fig_dir
+    return csv_dir(), figure_dir()
 
 
 def _find_csv(name: str):
-    csv_dir, _fig_dir = _io_dirs()
-    for path in (csv_dir / name, V4_CSV / name, BASE / "results" / "csv" / name):
-        if path.exists():
-            return path
-    return csv_dir / name
-
-
-def _apply_canonical_tierc_mmd(mmd: dict[str, float]) -> None:
-    path = _find_csv("exp_mmd_confound_summary.csv")
-    if not path.exists():
-        return
-    row = pd.read_csv(path).iloc[0]
-    mmd["TierC_BFS46_FSDM41"] = float(row["large_pair_raw_mmd2"])
-    mmd["TierC_DTSR14_WOODAUTH"] = float(row["small_pair_raw_mmd2"])
+    return require_csv(name)
 
 
 def load_conditions():
@@ -98,9 +80,9 @@ def load_conditions():
                          (1 - mean pairwise cosine within the batch); larger =
                          more dispersed.
     Compute MMD and within-batch spread from the same cached features used elsewhere; failure
-    from the corresponding accuracy. Use the bandwidth-audited
-    BFS46<->FSDM41 (mmd~0.101, failure~0.99) and
-    DTSR14<->WOODAUTH (mmd~0.194, failure~0.69) values.
+    from the corresponding accuracy. All eight groups use the same capped
+    reference-bank score protocol; full-feature Tier-C magnitudes are analyzed
+    separately by the MMD confound experiment.
     """
     print("[load] reading monitor, Tier-B, Tier-C, and Tier-D CSV outputs", flush=True)
     monitor = pd.read_csv(_find_csv("exp_monitor_on_real_shift_scores.csv"))
@@ -136,7 +118,18 @@ def load_conditions():
         try:
             X = _load_norm_cache(row["backbone"], row["target_dataset"], "original")
             X = X[len(X) // 2:]
-            add("clean_TierA", row["ref_mmd_rbf"], 0.0, within_batch_spread(X, hash(tuple(row)) % (2**32)))
+            add(
+                "clean_TierA",
+                row["ref_mmd_rbf"],
+                0.0,
+                within_batch_spread(
+                    X,
+                    stable_seed(
+                        row["backbone"], row["target_dataset"],
+                        row["target_tag"], "clean",
+                    ),
+                ),
+            )
         except Exception:
             add("clean_TierA", row["ref_mmd_rbf"], 0.0, 0.0)
 
@@ -152,7 +145,7 @@ def load_conditions():
         condition = "TierB_synth_severe" if failure > 0.20 else "TierB_synth_mild"
         try:
             X = _load_norm_cache(row["backbone"], row["target_dataset"], row["target_tag"])
-            comp = within_batch_spread(X, hash(key) % (2**32))
+            comp = within_batch_spread(X, stable_seed(*key))
         except Exception:
             comp = np.nan
         add(condition, row["ref_mmd_rbf"], failure, comp)
@@ -173,7 +166,7 @@ def load_conditions():
             condition = "TierD_xmag_x20x50"
         try:
             X = _load_norm_cache(row["backbone"], row["target_dataset"], "original")
-            comp = within_batch_spread(X, hash(key) % (2**32))
+            comp = within_batch_spread(X, stable_seed(*key))
         except Exception:
             comp = np.nan
         add(condition, row["ref_mmd_rbf"], float(tierd_key.loc[key, "accuracy_drop"]), comp)
@@ -196,7 +189,7 @@ def load_conditions():
         species = _shared_species(table, row["reference_dataset"], row["target_dataset"])
         try:
             X = stack_shared(row["target_dataset"], row["backbone"], species)
-            comp = within_batch_spread(X, hash(key) % (2**32))
+            comp = within_batch_spread(X, stable_seed(*key))
         except Exception:
             comp = np.nan
         add(row["condition"], row["ref_mmd_rbf"], 1.0 - float(tierc_key.loc[key, "cross_source_accuracy"]), comp)
@@ -354,17 +347,7 @@ def make_figure(out, path="monitor_severity_dissociation.png"):
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     conds, m, f, cp = out["_arrays"]
-    m = np.asarray(m, dtype=float).copy()
-    gamma_path = _find_csv("exp_mmd_gamma_sensitivity_by_condition.csv")
-    if gamma_path.exists():
-        gamma = pd.read_csv(gamma_path)
-        gamma = gamma[gamma["policy"].eq("per_pair_median")].set_index("condition")
-        for i, condition in enumerate(conds):
-            if condition in gamma.index:
-                m[i] = float(gamma.loc[condition, "mmd"])
-    canonical = dict(zip(conds, m))
-    _apply_canonical_tierc_mmd(canonical)
-    m = np.array([canonical[c] for c in conds], dtype=float)
+    m = np.asarray(m, dtype=float)
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
     short_labels = {
         "clean_TierA": "clean Tier-A",
@@ -451,12 +434,13 @@ def main():
     ap.add_argument("--no-fig", action="store_true")
     args = ap.parse_args()
     if args.from_csv:
-        path = _find_csv("exp_monitor_severity_dissociation_by_condition.csv")
-        saved = pd.read_csv(path)
-        spread_col = (
-            "within_batch_spread"
-            if "within_batch_spread" in saved.columns
-            else "compactness"
+        path = _find_csv("exp_monitor_severity_dissociation_records.csv")
+        records = pd.read_csv(path)
+        spread_col = "compactness"
+        saved = records.groupby("condition", as_index=False).agg(
+            mmd=("mmd", "mean"),
+            failure=("failure", "mean"),
+            compactness=(spread_col, "mean"),
         )
         mmd = dict(zip(saved["condition"], saved["mmd"]))
         failure = dict(zip(saved["condition"], saved["failure"]))
@@ -468,8 +452,6 @@ def main():
         if not args.demo:
             print("[no mode given] defaulting to --demo\n")
         mmd, failure, compact = make_demo()
-    if args.real or args.from_csv:
-        _apply_canonical_tierc_mmd(mmd)
     out = analyze(mmd, failure, compact)
     print_summary(out)
     if not args.no_fig:
@@ -480,7 +462,31 @@ def main():
         make_figure(out, fig)
     if args.real or args.from_csv:
         save_outputs(out)
-        csv_dir, _fig_dir = _io_dirs()
+        csv_dir, fig_dir = _io_dirs()
+        outputs = [
+            csv_dir / "exp_monitor_severity_dissociation_by_condition.csv",
+            csv_dir / "exp_monitor_severity_dissociation_summary.csv",
+        ]
+        records = csv_dir / "exp_monitor_severity_dissociation_records.csv"
+        if records.exists():
+            outputs.append(records)
+        if not args.no_fig:
+            outputs.extend([Path(fig), Path(fig).with_suffix(".pdf")])
+        write_provenance(
+            "exp_monitor_severity_dissociation",
+            outputs,
+            protocol="capped_reference_bank_severity_ranking_v1",
+            parameters={
+                "condition_groups": len(out["conditions"]),
+                "seed_policy": "blake2s_stable",
+                "source": "saved_csv" if args.from_csv else "real_caches",
+                "score_protocol": "capped_reference_bank_mmd",
+            },
+            inputs=[
+                require_csv("exp_monitor_on_real_shift_scores.csv"),
+                require_csv("exp_monitor_severity_dissociation_records.csv"),
+            ],
+        )
         print(f"\nSaved CSV outputs to {csv_dir}")
 
 

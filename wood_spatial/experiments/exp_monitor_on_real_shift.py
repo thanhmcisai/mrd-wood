@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from wood_spatial.config import BASE, BB_LABEL, BB_ORDER, PERTURB_CONFIGS, TIER_A, TIER_B, TIER_C, V4_CSV, V4_FIGURES
+from wood_spatial.result_io import require_csv, stable_seed, write_provenance
 from wood_spatial.experiments.exp_tierc_cross_source_shift import (
     PAIRS as TIER_C_PAIRS,
     _features_by_species,
@@ -104,21 +105,16 @@ def _spearman(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def _synthetic_threshold(detector_col: str = "ref_mmd_rbf") -> tuple[float, str]:
-    candidates = [
-        V4_CSV / "exp10_reference_monitor_auc.csv",
-        BASE / "results" / "csv" / "exp10_reference_monitor_auc.csv",
-        Path.cwd() / "results" / "csv" / "exp10_reference_monitor_auc.csv",
-    ]
-    auc_path = candidates[0]
-    for path in candidates:
-        if not path.exists():
-            continue
-        auc_path = path
-        auc = pd.read_csv(path)
-        sub = auc[auc["detector"] == detector_col]
-        if len(sub) and "best_threshold" in sub.columns:
-            return float(sub.iloc[0]["best_threshold"]), str(path)
-    return np.nan, str(auc_path)
+    auc_path = require_csv("exp10_reference_monitor_auc.csv")
+    try:
+        source_label = str(auc_path.relative_to(BASE))
+    except ValueError:
+        source_label = str(auc_path)
+    auc = pd.read_csv(auc_path)
+    sub = auc[auc["detector"] == detector_col]
+    if len(sub) and "best_threshold" in sub.columns:
+        return float(sub.iloc[0]["best_threshold"]), source_label
+    return np.nan, source_label
 
 
 def _available_synth_tags() -> list[str]:
@@ -169,8 +165,14 @@ def _stack_shared(table: pd.DataFrame, dataset: str, backbone: str, pair_species
 
 def _add_record(rows: list[dict], backbone: str, condition: str, reference_dataset: str, target_dataset: str,
                 target_tag: str, ref: np.ndarray, target: np.ndarray, severity_rank: int, cap: int) -> None:
-    ref_c = _cap(ref, cap, abs(hash((backbone, reference_dataset, target_dataset, target_tag, "r"))) % (2**32))
-    target_c = _cap(target, cap, abs(hash((backbone, reference_dataset, target_dataset, target_tag, "t"))) % (2**32))
+    ref_c = _cap(
+        ref, cap,
+        stable_seed(backbone, reference_dataset, target_dataset, target_tag, "reference"),
+    )
+    target_c = _cap(
+        target, cap,
+        stable_seed(backbone, reference_dataset, target_dataset, target_tag, "target"),
+    )
     rows.append({
         "backbone": backbone,
         "backbone_label": BB_LABEL.get(backbone, backbone),
@@ -287,40 +289,6 @@ def summarize(scores: pd.DataFrame, threshold: float, threshold_source: str) -> 
 
 def plot_summary(by_condition: pd.DataFrame, threshold: float, overall: pd.DataFrame, fig_path: Path) -> None:
     by_condition = by_condition.copy()
-    gamma_path = V4_CSV / "exp_mmd_gamma_sensitivity_by_condition.csv"
-    if gamma_path.exists():
-        gamma = pd.read_csv(gamma_path)
-        gamma = gamma[gamma["policy"].eq("per_pair_median")].set_index("condition")
-        replacements = {
-            "TierA_clean": float(gamma.loc["clean_TierA", "mmd"]),
-            "TierD_xmag": float(gamma.loc[
-                ["TierD_xmag_x10x20", "TierD_xmag_x10x50", "TierD_xmag_x20x50"],
-                "mmd",
-            ].mean()),
-            "TierC_DTSR14_WOODAUTH": float(gamma.loc["TierC_DTSR14_WOODAUTH", "mmd"]),
-            "TierC_BFS46_FSDM41": float(gamma.loc["TierC_BFS46_FSDM41", "mmd"]),
-        }
-        for condition, value in replacements.items():
-            by_condition.loc[
-                by_condition["condition"].eq(condition), "mean_ref_mmd_rbf"
-            ] = value
-    confound_candidates = [
-        V4_CSV / "exp_mmd_confound_summary.csv",
-        BASE / "results" / "csv" / "exp_mmd_confound_summary.csv",
-        Path.cwd() / "results" / "csv" / "exp_mmd_confound_summary.csv",
-    ]
-    confound_path = next((p for p in confound_candidates if p.exists()), None)
-    if confound_path is not None:
-        confound = pd.read_csv(confound_path).iloc[0]
-        by_condition.loc[
-            by_condition["condition"].eq("TierC_BFS46_FSDM41"),
-            "mean_ref_mmd_rbf",
-        ] = float(confound["large_pair_raw_mmd2"])
-        by_condition.loc[
-            by_condition["condition"].eq("TierC_DTSR14_WOODAUTH"),
-            "mean_ref_mmd_rbf",
-        ] = float(confound["small_pair_raw_mmd2"])
-
     fig, ax = plt.subplots(figsize=(9.2, 4.4))
     x = np.arange(len(by_condition))
     vals = by_condition["mean_ref_mmd_rbf"].to_numpy()
@@ -355,6 +323,11 @@ def main() -> None:
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--real", action="store_true")
     mode.add_argument("--demo", action="store_true")
+    mode.add_argument(
+        "--from-csv",
+        action="store_true",
+        help="Regenerate summaries and the figure from canonical saved score records.",
+    )
     ap.add_argument("--csv", default="all_public_datasets_standardized.csv")
     ap.add_argument("--cap", type=int, default=1500, help="maximum reference/target features per score")
     ap.add_argument("--max-tierb-tags", type=int, default=0, help="debug limit; 0 means all available synthetic tags")
@@ -362,7 +335,9 @@ def main() -> None:
     ap.add_argument("--no-fig", action="store_true")
     args = ap.parse_args()
 
-    if args.demo:
+    if args.from_csv:
+        scores = pd.read_csv(require_csv("exp_monitor_on_real_shift_scores.csv"))
+    elif args.demo:
         rng = np.random.default_rng(42)
         rows = []
         for bb in BB_ORDER:
@@ -396,7 +371,7 @@ def main() -> None:
 
     csv_dir = V4_CSV
     fig_dir = V4_FIGURES
-    if (args.real or not args.demo) and not args.no_save:
+    if (args.real or args.from_csv or not args.demo) and not args.no_save:
         csv_dir.mkdir(parents=True, exist_ok=True)
         scores.to_csv(csv_dir / "exp_monitor_on_real_shift_scores.csv", index=False)
         by_condition.to_csv(csv_dir / "exp_monitor_on_real_shift_by_condition.csv", index=False)
@@ -406,6 +381,29 @@ def main() -> None:
         print(f"\nSaved CSV outputs to {csv_dir}")
         if not args.no_fig:
             print(f"Saved figure to {fig_dir / 'monitor_on_real_shift.png'}")
+        outputs = [
+            csv_dir / "exp_monitor_on_real_shift_scores.csv",
+            csv_dir / "exp_monitor_on_real_shift_by_condition.csv",
+            csv_dir / "exp_monitor_on_real_shift_summary.csv",
+        ]
+        if not args.no_fig:
+            outputs.extend([
+                fig_dir / "monitor_on_real_shift.png",
+                fig_dir / "monitor_on_real_shift.pdf",
+            ])
+        write_provenance(
+            "exp_monitor_on_real_shift",
+            outputs,
+            protocol="capped_reference_bank_alarm_v1",
+            parameters={
+                "cap": args.cap,
+                "mmd_internal_cap": min(args.cap, 512),
+                "max_tierb_tags": args.max_tierb_tags,
+                "seed_policy": "blake2s_stable",
+                "source": "saved_csv" if args.from_csv else "real_caches",
+            },
+            inputs=[require_csv("exp10_reference_monitor_auc.csv")],
+        )
     elif not args.no_fig:
         plot_summary(by_condition, threshold, overall, Path("monitor_on_real_shift.png"))
 

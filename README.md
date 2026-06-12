@@ -30,19 +30,22 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 - After controlling for dataset, backbone, perturbation family, and severity,
   feature drift retains a positive association with accuracy drop
-  (`partial r = 0.623`, `Delta R2 = 0.031`).
+  (`partial r = 0.623`, `Delta R2 = 0.032`).
 - The transferable cross-space component is smaller (`partial r = 0.178`);
   pooled same-space `r = 0.908` is treated as an upper-bound association.
-- Frozen features encode acquisition source more reliably than cross-source
-  species identity.
+- A balanced leave-one-species-out probe recovers acquisition source at
+  `0.923/0.940` accuracy (binary chance `0.5`), while cross-source species
+  recognition is below or near task-specific chance (`0.014` vs `1/24`;
+  `0.278` vs `1/4`). This exposes a class-conditional gap within a
+  source-sensitive marginal representation.
 - Shared-species transfer nearly collapses for BFS46/FSDM41
   (`accuracy = 0.008-0.013`) and remains limited for DTSR14/WOODAUTH.
 - VN26 transfer is asymmetric and non-monotone across magnification pairs, with
   x50 as the main cross-scale failure locus.
 - A standard reference-bank RBF-MMD monitor reaches batch-level
   `ROC-AUC = 0.968` and `F1 = 0.909` on synthetic shifts and flags 60/70
-  real-shift batches. Its raw magnitude is an acquisition-mismatch score, not a
-  calibrated estimate of accuracy loss.
+  real-shift batches. Its raw magnitude detects acquisition mismatch but does
+  not rank class-conditional failure reliably across heterogeneous sources.
 
 ## Selected Results
 
@@ -54,7 +57,7 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 ### Real Cross-Source Shift
 
-![Source versus species probe](results/figures/source_vs_species_probe.png)
+![Held-out source versus cross-source species probe](results/figures/source_vs_species_probe.png)
 
 ![Tier-C cross-source transfer](results/figures/tierc_cross_source_shift.png)
 
@@ -74,6 +77,10 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 ![Matched-class dissociation](results/figures/matched_class_dissociation.png)
 
+The monitoring controls separate two roles that should not be conflated:
+thresholded RBF-MMD is evaluated as a binary acquisition-mismatch alarm, whereas
+raw MMD magnitude is tested and rejected as a universal accuracy-loss scale.
+
 ## Repository Layout
 
 ```text
@@ -88,6 +95,7 @@ configs/
 results/
   csv/               Processed numerical outputs tracked by git
   figures/           PNG figures tracked by git
+  audit/             Machine-readable paper/CSV consistency audit
 main.tex             Manuscript source
 references.bib       Bibliography
 ```
@@ -132,6 +140,21 @@ python scripts/run_full_colab.py \
          exp_monitor_on_real_shift
 ```
 
+Run the real-shift and class-conditional monitoring controls:
+
+```bash
+python scripts/run_full_colab.py \
+  --config configs/full_colab_l4.json \
+  --only exp5_crossmag_asymmetry \
+         exp_tierc_cross_source \
+         exp_source_vs_species_probe \
+         exp_monitor_on_real_shift \
+         exp_monitor_severity_dissociation \
+         exp_mmd_gamma_sensitivity \
+         exp_mmd_confound_and_sign \
+         exp_matched_class_dissociation
+```
+
 Validate Tier-C species overlap and caches before the real run:
 
 ```bash
@@ -139,14 +162,38 @@ python -u -m wood_spatial.experiments.exp_tierc_cross_source_shift \
   --check-only
 ```
 
+The source-versus-species stage reports both balanced held-out-image accuracy
+and a stricter leave-one-species-out source probe; the latter is the manuscript
+protocol.
+
 Check expected outputs:
 
 ```bash
+WOOD_RESULTS_DIR=results \
 python scripts/check_full_run_outputs.py \
   --config configs/full_colab_l4.json \
   --no-paper-figures \
   --show-ok
 ```
+
+Omit `WOOD_RESULTS_DIR=results` on Colab when the configured results directory is
+the intended target.
+
+Audit the numerical claims used by the paper:
+
+```bash
+python scripts/audit_paper_results.py --strict --write-report
+```
+
+The audit distinguishes condition-level and batch-level AUCs, controlled and
+pooled correlations, capped alarm scores, full-feature MMD magnitudes, and
+shared-bandwidth sensitivity checks. Its canonical metric registry is written
+to `results/audit/paper_metric_registry.csv`. Outputs are moved to
+`results/archive/` only when they are verified to come from a superseded
+formula, configuration, cache, or protocol.
+
+The submission snapshot passes the strict paper audit with 106 checked claims
+and no warnings or failures.
 
 ## Manuscript
 
@@ -160,4 +207,6 @@ Build with the bundled Tectonic binary when available:
 ```
 
 The manuscript uses the Elsevier CAS single-column template. Generated PDFs are
-not required to reproduce the numerical results.
+not required to reproduce the numerical results. The main body ends before the
+references at approximately 25 pages; extended spatial, margin, decision-rule,
+and monitoring checks are retained in the Supplementary Material.

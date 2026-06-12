@@ -93,8 +93,25 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
         CsvSpec("exp_tierc_cross_source_summary.csv"),
     ],
     "exp_source_vs_species_probe": [
-        CsvSpec("exp_source_vs_species_probe_by_backbone.csv"),
-        CsvSpec("exp_source_vs_species_probe_summary.csv"),
+        CsvSpec(
+            "exp_source_vs_species_probe_by_backbone.csv",
+            (
+                "pair",
+                "backbone",
+                "source_acc_heldout_image",
+                "source_acc_leave_one_species_out",
+                "cross_source_species_acc",
+            ),
+        ),
+        CsvSpec(
+            "exp_source_vs_species_probe_summary.csv",
+            (
+                "pair",
+                "source_acc_heldout_image_mean",
+                "source_acc_leave_one_species_out_mean",
+                "cross_source_species_acc_mean",
+            ),
+        ),
     ],
     "exp5b": [
         CsvSpec("exp5b_sgi_by_mag.csv"),

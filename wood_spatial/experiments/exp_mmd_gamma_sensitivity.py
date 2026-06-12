@@ -37,7 +37,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BASE, BB_LABEL, BB_ORDER, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_LABEL, BB_ORDER
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, write_provenance
 from wood_spatial.experiments.exp_monitor_on_real_shift import _cap, _load_norm_cache
 from wood_spatial.experiments.exp_tierc_cross_source_shift import (
     _features_by_species,
@@ -88,22 +89,11 @@ def _limit_worker_threads() -> None:
 
 
 def _io_dirs() -> tuple[Path, Path]:
-    csv_dir = V4_CSV
-    fig_dir = V4_FIGURES
-    if not os.environ.get("WOOD_RESULTS_DIR") and (BASE / "results" / "csv").exists():
-        csv_dir = BASE / "results" / "csv"
-        fig_dir = BASE / "results" / "figures"
-    csv_dir.mkdir(parents=True, exist_ok=True)
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    return csv_dir, fig_dir
+    return csv_dir(), figure_dir()
 
 
 def _find_csv(name: str) -> Path:
-    csv_dir, _fig_dir = _io_dirs()
-    for path in (csv_dir / name, V4_CSV / name, BASE / "results" / "csv" / name, Path.cwd() / "results" / "csv" / name):
-        if path.exists():
-            return path
-    return csv_dir / name
+    return require_csv(name)
 
 
 def _sqdist(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -543,6 +533,33 @@ def main() -> None:
         _csv_dir, fig_dir = _io_dirs()
         plot_summary(by_condition, summary, fig_dir / "mmd_gamma_sensitivity.png")
         print(f"\nSaved figure to {fig_dir / 'mmd_gamma_sensitivity.png'}")
+    if args.real:
+        csv_dir, fig_dir = _io_dirs()
+        outputs = [
+            csv_dir / "exp_mmd_gamma_sensitivity_records.csv",
+            csv_dir / "exp_mmd_gamma_sensitivity_by_condition.csv",
+            csv_dir / "exp_mmd_gamma_sensitivity_summary.csv",
+        ]
+        if not args.no_fig:
+            outputs.extend([
+                fig_dir / "mmd_gamma_sensitivity.png",
+                fig_dir / "mmd_gamma_sensitivity.pdf",
+            ])
+        write_provenance(
+            "exp_mmd_gamma_sensitivity",
+            outputs,
+            protocol="shared_gamma_feature_sampling_v1",
+            parameters={
+                "cap": args.cap,
+                "jobs": args.jobs,
+                "force": args.force,
+                "seed_policy": "blake2s_stable",
+            },
+            inputs=[
+                require_csv("exp5_crossmag_drift_drop.csv"),
+                require_csv("exp_tierc_cross_source_transfer.csv"),
+            ],
+        )
 
 
 if __name__ == "__main__":

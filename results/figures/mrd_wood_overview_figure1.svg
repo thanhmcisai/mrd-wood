@@ -29,13 +29,13 @@
 
   <rect x="255" y="205" width="690" height="105" rx="18" fill="#10664f"/>
   <text class="title" x="600" y="250">Representation drift</text>
-  <text x="600" y="283" fill="#8ed1ba" font-size="19">quantifies the laboratory-to-field gap</text>
+  <text x="600" y="283" fill="#8ed1ba" font-size="19">quantifies the acquisition-shift gap</text>
 
   <path class="arrow" d="M600 310 L600 365"/>
 
   <rect x="230" y="365" width="740" height="110" rx="18" fill="#362a9e" stroke="#776bd2" stroke-width="3"/>
   <text class="title" x="600" y="412">The gap is partly in the model</text>
-  <text class="finding-sub" x="600" y="449">source is recoverable while cross-source species geometry fails</text>
+  <text class="finding-sub" x="600" y="449">source identity transfers across held-out species</text>
 
   <text x="600" y="510" fill="#666666" font-size="17" font-style="italic">two WoodID-specific boundaries</text>
   <path class="arrow" d="M600 475 L350 545"/>

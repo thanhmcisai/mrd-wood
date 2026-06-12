@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BASE, BB_LABEL, BB_ORDER, TIER_C, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_LABEL, BB_ORDER, TIER_C
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, write_provenance
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,25 +42,26 @@ def _load_accuracy(csv_dir: Path) -> pd.DataFrame:
 
 
 def _find_csv(name: str, preferred_dir: Path) -> Path:
-    candidates = [
-        preferred_dir / name,
-        V4_CSV / name,
-        BASE / "results" / "csv" / name,
-        Path.cwd() / "results" / "csv" / name,
-    ]
-    for path in candidates:
-        if path.exists():
-            return path
-    return preferred_dir / name
+    del preferred_dir
+    return require_csv(name)
 
 
 def _output_dirs() -> tuple[Path, Path]:
-    csv_dir = V4_CSV
-    fig_dir = V4_FIGURES
-    if not (csv_dir / "exp5_full_crossmag_accuracy.csv").exists() and (BASE / "results" / "csv").exists():
-        csv_dir = BASE / "results" / "csv"
-        fig_dir = BASE / "results" / "figures"
-    return csv_dir, fig_dir
+    return csv_dir(), figure_dir()
+
+
+def _load_saved_tables(csv_path: Path) -> dict[str, pd.DataFrame]:
+    names = {
+        "by_backbone": "exp5_crossmag_asymmetry_by_backbone.csv",
+        "by_pair": "exp5_crossmag_asymmetry_by_pair.csv",
+        "by_ratio": "exp5_crossmag_ratio_summary.csv",
+        "drift_drop": "exp5_crossmag_drift_drop.csv",
+        "summary": "exp5_crossmag_asymmetry_summary.csv",
+    }
+    return {
+        key: pd.read_csv(csv_path / name)
+        for key, name in names.items()
+    }
 
 
 def _centroids(features: np.ndarray, labels: np.ndarray) -> dict:
@@ -354,13 +356,24 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--real", action="store_true", help="Use cached VN26 features for centroid drift.")
     mode.add_argument("--demo", action="store_true", help="Use deterministic demo drifts; no feature cache needed.")
+    mode.add_argument(
+        "--from-csv",
+        action="store_true",
+        help="Regenerate the figure from canonical saved CSVs without reading feature caches.",
+    )
     parser.add_argument("--no-save", action="store_true")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
     save = (not args.no_save) and (not args.demo)
-    print(f"Mode: {'demo' if args.demo else 'real'}", flush=True)
-    tables = run(real=not args.demo, save=save)
+    mode_name = "from-csv" if args.from_csv else ("demo" if args.demo else "real")
+    print(f"Mode: {mode_name}", flush=True)
+    if args.from_csv:
+        csv_path, fig_path = _output_dirs()
+        tables = _load_saved_tables(csv_path)
+        _plot(tables, fig_path / "cross_magnification_asymmetry.png")
+    else:
+        tables = run(real=not args.demo, save=save)
     print("\n=== Cross-magnification asymmetry by pair ===")
     print(tables["by_pair"].round(4).to_string(index=False))
     print("\n=== Ratio summary ===")
@@ -374,6 +387,29 @@ def main():
         print("\nNo drift/drop summary produced. In --real mode, check VN26 feature caches and exp1b_feature_geometry.csv.")
     if save:
         csv_dir, fig_dir = _output_dirs()
+        outputs = [
+            csv_dir / "exp5_crossmag_asymmetry_by_backbone.csv",
+            csv_dir / "exp5_crossmag_asymmetry_by_pair.csv",
+            csv_dir / "exp5_crossmag_ratio_summary.csv",
+            csv_dir / "exp5_crossmag_drift_drop.csv",
+            csv_dir / "exp5_crossmag_asymmetry_summary.csv",
+            fig_dir / "cross_magnification_asymmetry.png",
+            fig_dir / "cross_magnification_asymmetry.pdf",
+        ]
+        write_provenance(
+            "exp5_crossmag_asymmetry",
+            outputs,
+            protocol="vn26_directed_cross_magnification_v1",
+            parameters={
+                "mode": mode_name,
+                "backbones": BB_ORDER,
+                "magnifications": TIER_C,
+            },
+            inputs=[
+                require_csv("exp5_full_crossmag_accuracy.csv"),
+                require_csv("exp1b_feature_geometry.csv"),
+            ],
+        )
         print(f"\nSaved CSV outputs to {csv_dir}")
         print(f"Saved figure to {fig_dir / 'cross_magnification_asymmetry.png'}")
     elif args.demo:

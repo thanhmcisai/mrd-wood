@@ -20,7 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BB_LABEL, BB_ORDER, BASE, V2_CACHE_DIR, V4_CSV, V4_FEAT_CACHE, V4_FIGURES
+from wood_spatial.config import BB_LABEL, BB_ORDER, BASE, V2_CACHE_DIR, V4_FEAT_CACHE
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv
 
 
 PAIRS = [("BFS46", "FSDM41"), ("DTSR14", "WOODAUTH")]
@@ -42,16 +43,8 @@ def _is_real_binomial(name: object) -> bool:
 
 
 def _find_csv(name: str, preferred_dir: Path) -> Path:
-    candidates = [
-        preferred_dir / name,
-        V4_CSV / name,
-        BASE / "results" / "csv" / name,
-        Path.cwd() / "results" / "csv" / name,
-    ]
-    for path in candidates:
-        if path.exists():
-            return path
-    return preferred_dir / name
+    del preferred_dir
+    return require_csv(name)
 
 
 def _resolve_species_csv(csv_arg: str) -> Path:
@@ -72,12 +65,7 @@ def _resolve_species_csv(csv_arg: str) -> Path:
 
 
 def _output_dirs() -> tuple[Path, Path]:
-    csv_dir = V4_CSV
-    fig_dir = V4_FIGURES
-    if not csv_dir.exists() and (BASE / "results" / "csv").exists():
-        csv_dir = BASE / "results" / "csv"
-        fig_dir = BASE / "results" / "figures"
-    return csv_dir, fig_dir
+    return csv_dir(), figure_dir()
 
 
 def _safe_tag(tag: str, maxlen: int = 60) -> str:
@@ -99,7 +87,7 @@ def _configured_results_dirs() -> list[Path]:
                 dirs.append(Path(results_dir))
         except Exception:
             pass
-    dirs.extend([BASE / "results_v4", BASE / "results"])
+    dirs.append(BASE / "results")
     out = []
     seen = set()
     for d in dirs:
@@ -117,7 +105,6 @@ def _cache_candidates(backbone: str, dataset: str, tag: str = "original") -> lis
         candidates.append(results_dir / "feature_cache" / f"{backbone}_{dataset}_{safe}.npz")
     candidates.append(V4_FEAT_CACHE / f"{backbone}_{dataset}_{safe}.npz")
     candidates.append(V2_CACHE_DIR / f"{backbone}_{dataset}_all_{safe}.npz")
-    candidates.append(Path.cwd() / "results" / "feature_cache" / f"{backbone}_{dataset}_{safe}.npz")
     return candidates
 
 

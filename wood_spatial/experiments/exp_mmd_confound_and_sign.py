@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BB_ORDER, BASE, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_ORDER
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, write_provenance
 from wood_spatial.experiments.exp_monitor_on_real_shift import _cap, _median_gamma
 from wood_spatial.experiments.exp_tierc_cross_source_shift import (
     PAIRS,
@@ -26,32 +27,15 @@ from wood_spatial.experiments.exp_tierc_cross_source_shift import (
 
 
 def _output_dir() -> Path:
-    if os.environ.get("WOOD_RESULTS_DIR"):
-        V4_CSV.mkdir(parents=True, exist_ok=True)
-        return V4_CSV
-    candidates = [BASE / "results" / "csv", V4_CSV]
-    for path in candidates:
-        if path.exists():
-            path.mkdir(parents=True, exist_ok=True)
-            return path
-    V4_CSV.mkdir(parents=True, exist_ok=True)
-    return V4_CSV
+    return csv_dir()
 
 
 def _find_csv(name: str) -> Path:
-    for path in (_output_dir() / name, V4_CSV / name, BASE / "results" / "csv" / name):
-        if path.exists():
-            return path
-    return _output_dir() / name
+    return require_csv(name)
 
 
 def _figure_dir() -> Path:
-    if os.environ.get("WOOD_RESULTS_DIR"):
-        V4_FIGURES.mkdir(parents=True, exist_ok=True)
-        return V4_FIGURES
-    path = BASE / "results" / "figures"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return figure_dir()
 
 
 def _stack(by_species: dict[str, np.ndarray], species: list[str]) -> np.ndarray:
@@ -413,6 +397,26 @@ def main() -> None:
             fig_path = _figure_dir() / "mmd_confound_and_class_count.png"
             make_figure(tables, fig_path)
             print(f"Saved figure to {fig_path}")
+        outputs = [
+            out / "exp_mmd_confound_terms.csv",
+            out / "exp_mmd_confound_regression.csv",
+            out / "exp_mmd_class_count_matched.csv",
+            out / "exp_mmd_confound_summary.csv",
+        ]
+        if not args.no_fig:
+            outputs.extend([fig_path, fig_path.with_suffix(".pdf")])
+        write_provenance(
+            "exp_mmd_confound_and_sign",
+            outputs,
+            protocol="tier_c_mmd_decomposition_v1",
+            parameters={
+                "cap": args.cap,
+                "seeds": args.seeds,
+                "jobs": args.jobs,
+                "seed_policy": "crc32_stable",
+            },
+            inputs=[require_csv("exp_tierc_cross_source_transfer.csv")],
+        )
 
 
 if __name__ == "__main__":

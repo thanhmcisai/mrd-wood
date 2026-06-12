@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BB_ORDER, BASE, V4_CSV, V4_FIGURES
+from wood_spatial.config import BB_ORDER
+from wood_spatial.result_io import csv_dir, figure_dir, require_csv, write_provenance
 from wood_spatial.experiments.exp_tierc_cross_source_shift import (
     K,
     PAIRS,
@@ -26,23 +27,15 @@ from wood_spatial.experiments.exp_tierc_cross_source_shift import (
 
 
 def _csv_dir() -> Path:
-    path = V4_CSV if os.environ.get("WOOD_RESULTS_DIR") else BASE / "results" / "csv"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return csv_dir()
 
 
 def _figure_dir() -> Path:
-    path = V4_FIGURES if os.environ.get("WOOD_RESULTS_DIR") else BASE / "results" / "figures"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    return figure_dir()
 
 
 def _find_csv(name: str) -> Path:
-    candidates = (_csv_dir() / name, V4_CSV / name, BASE / "results" / "csv" / name)
-    for path in candidates:
-        if path.exists():
-            return path
-    raise FileNotFoundError(f"Required result not found: {name}")
+    return require_csv(name)
 
 
 def _selected_species_by_seed(matched: pd.DataFrame) -> dict[int, list[str]]:
@@ -272,6 +265,27 @@ def main() -> None:
                 figure = _figure_dir() / "matched_class_dissociation.png"
                 make_figure(tables["by_seed"], figure)
                 print(f"Saved figure to {figure}")
+            outputs = [
+                out / "exp_matched_class_dissociation_by_cell.csv",
+                out / "exp_matched_class_dissociation_by_seed.csv",
+                out / "exp_matched_class_dissociation_summary.csv",
+            ]
+            if not args.no_fig:
+                outputs.extend([figure, figure.with_suffix(".pdf")])
+            write_provenance(
+                "exp_matched_class_dissociation",
+                outputs,
+                protocol="matched_four_species_transfer_v1",
+                parameters={
+                    "jobs": args.jobs,
+                    "k": K,
+                    "species_count": 4,
+                },
+                inputs=[
+                    require_csv("exp_mmd_class_count_matched.csv"),
+                    require_csv("exp_mmd_confound_terms.csv"),
+                ],
+            )
 
 
 if __name__ == "__main__":

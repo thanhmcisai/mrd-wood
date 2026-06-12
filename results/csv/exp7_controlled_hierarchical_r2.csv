@@ -1,6 +1,6 @@
 model,controls,numeric_terms,r2,delta_r2,n,complete_case
-M0: dataset+backbone+perturbation+severity,dataset+backbone+perturbation+severity_control,,0.897150382517635,0.897150382517635,630,True
-M1: + feature drift,dataset+backbone+perturbation+severity_control,feature_drift,0.9285639288417222,0.031413546324087216,630,True
-M2: + feature geometry,dataset+backbone+perturbation+severity_control,feature_drift+delta_intra+inter_collapse+delta_fgcs,0.9365682604503438,0.008004331608621573,630,True
-M3: + spatial metrics,dataset+backbone+perturbation+severity_control,feature_drift+delta_intra+inter_collapse+delta_fgcs+sgi_clean+spatial_instability_hungarian,0.9377611952672366,0.0011929348168927545,630,True
+M0: dataset+backbone+perturbation+severity,dataset+backbone+perturbation+severity_control,,0.8969154500053456,0.8969154500053456,630,True
+M1: + feature drift,dataset+backbone+perturbation+severity_control,feature_drift,0.9285640912377093,0.03164864123236377,630,True
+M2: + feature geometry,dataset+backbone+perturbation+severity_control,feature_drift+delta_intra+inter_collapse+delta_fgcs,0.9365683535990363,0.008004262361327008,630,True
+M3: + spatial metrics,dataset+backbone+perturbation+severity_control,feature_drift+delta_intra+inter_collapse+delta_fgcs+sgi_clean+spatial_instability_hungarian,0.9377611952672366,0.0011928416682002174,630,True
 M4: + CAM metrics,dataset+backbone+perturbation+severity_control,feature_drift+delta_intra+inter_collapse+delta_fgcs+sgi_clean+spatial_instability_hungarian+cam_shift_jsd+cam_entropy_clean,0.9378830993262164,0.00012190405897982703,630,True

@@ -36,7 +36,7 @@
 \shorttitle{When Wood Recognition Fails}
 \shortauthors{Ma--Cong and Nguyen--Trong}
 
-\title[mode=title]{When Wood Recognition Fails:\\ Cross-Source and Cross-Magnification Boundaries\\ of Acquisition Shift}
+\title[mode=title]{When Wood Recognition Fails: Cross-Source and Cross-Magnification Boundaries of Acquisition Shift}
 
 \author[1]{Thanh Ma--Cong}
 \credit{Conceptualization, Methodology, Software, Formal analysis, Writing -- original draft}
@@ -69,11 +69,12 @@ evaluate controlled perturbations, external-source generalization, real
 cross-source transfer, and cross-magnification transfer. After controlling for
 dataset, backbone, perturbation family, and severity, feature drift retains a
 modest association with accuracy drop (partial $r=0.623$,
-$\Delta R^2=0.031$); a smaller component transfers across feature spaces
+$\Delta R^2=0.032$); a smaller component transfers across feature spaces
 ($r=0.178$). The pooled same-space correlation ($r=0.908$) is therefore treated
-as an upper bound shaped by severity and same-space coupling. A source probe
-further shows that frozen features encode acquisition source more reliably than
-cross-source species identity. The domain-specific consequences are severe:
+as an upper bound shaped by severity and same-space coupling. A balanced
+leave-one-species-out probe further shows that acquisition source is recoverable
+from frozen features even for held-out species, whereas cross-source species
+identity transfers poorly. The domain-specific consequences are severe:
 shared-species transfer nearly collapses for
 BFS46$\leftrightarrow$FSDM41 (mean accuracy 0.008--0.013), and VN26 exhibits
 asymmetric, non-monotone transfer across magnifications, with x50 as the main
@@ -84,7 +85,7 @@ target labels. However, its severity ordering remains non-monotone under shared
 kernel bandwidths and is sensitive to reference-bank class composition, so it
 is an acquisition-mismatch alarm rather than a calibrated accuracy-loss
 estimator. These results locate part of the
-laboratory-to-field gap in source-sensitive representation geometry and motivate
+acquisition-shift gap in source-sensitive representation geometry and motivate
 species-conditional source invariance across acquisition protocols and optical
 scales.
 \end{abstract}
@@ -92,7 +93,7 @@ scales.
 \begin{highlights}
 \item Multi-dataset benchmark tests wood recognition under acquisition shifts.
 \item Controlled drift retains a modest signal beyond shift severity.
-\item Frozen features encode acquisition source more reliably than species.
+\item Source identity transfers across species while species geometry does not.
 \item Cross-source transfer collapses and magnification transfer is asymmetric.
 \item Reference-bank alarms detect acquisition mismatch without target labels.
 \end{highlights}
@@ -115,7 +116,8 @@ Most existing WoodID studies answer the question ``which classifier is accurate?
 This paper addresses these issues through \textbf{MRD-Wood}
 (\textbf{M}apping \textbf{R}epresentation \textbf{D}rift for Wood
 Recognition), an empirical diagnosis and monitoring protocol rather than a new
-classifier or detector. The argument follows a lab-to-field chain. First, an
+classifier or detector. The argument follows a controlled-to-real acquisition
+chain. First, an
 acquisition gap exists: clean accuracy does not determine robustness. Second,
 the gap is measurable through representation displacement. Third, source-vs-
 species and cross-space tests show that part of the gap lies in the frozen
@@ -133,29 +135,29 @@ The study is organized around three research questions:
   \item \textbf{RQ1:} What component of representation drift remains associated
   with WoodID degradation after accounting for dataset, backbone, perturbation
   family, severity, and same-space coupling?
-  \item \textbf{RQ2:} How does source-sensitive representation geometry manifest
-  under real cross-source and cross-magnification transfer?
+  \item \textbf{RQ2:} How does source-sensitive geometry appear under real
+  cross-source and cross-magnification transfer?
   \item \textbf{RQ3:} To what extent can standard reference-bank statistics turn
   this diagnosis into a label-free acquisition-mismatch alarm?
 \end{itemize}
 
 MRD-Wood combines frozen backbones, cosine-kNN decisions, and established
 OOD/two-sample statistics in a domain-specific empirical analysis. It
-locates part of the lab-to-field gap in frozen feature geometry and then exposes
+locates part of the acquisition-shift gap in frozen feature geometry and then exposes
 its two strongest consequences under real acquisition change.
 
 The main contributions are:
 
 \begin{enumerate}
-  \item \textbf{A controlled, class-conditional diagnosis of the lab-to-field
+  \item \textbf{A controlled, class-conditional diagnosis of the acquisition-shift
   gap.} Paired, grouped, and cross-space analyses separate severity-linked,
   same-space, and transferable drift components. The source-versus-species
   probe, below-chance cross-source transfer, and kernel decomposition further
   show that marginal acquisition structure can persist while
   species-conditional geometry is misaligned.
-  \item \textbf{A real cross-source transfer boundary.} Shared-species
-  recognition nearly collapses across BFS46 and FSDM41 even though acquisition
-  source remains readily recoverable from the frozen features.
+  \item \textbf{A direct cross-source transfer boundary.} Shared-species
+  recognition nearly collapses across BFS46 and FSDM41 while acquisition source
+  remains predictable for species excluded from source-centroid estimation.
   \item \textbf{A WoodID-specific cross-magnification asymmetry.} VN26 reveals
   sign-reversing, non-monotone optical-scale transfer with x50 as the locus of
   cross-scale incompatibility.
@@ -188,6 +190,12 @@ and VN26 further show that recognition can be highly accurate under controlled
 acquisition while remaining sensitive to surface preparation, anatomical
 section, optical scale, and image resolution
 \citep{canosaenz2022tropical,barmpoutis2018woodauth,herrera2026goimai,nguyentrong2023magnification}.
+Multi-xylarium evaluation has also trained WoodID models on specimens from
+several collections and tested them on a held-out collection
+\citep{ravindran2022multixylarium}. That protocol establishes the importance of
+source-disjoint validation; the present study instead measures direct
+source-to-source transfer over shared accepted species and analyzes the
+associated frozen representation geometry.
 
 These studies establish that wood images are discriminative. The same literature,
 however, cautions that controlled image-level performance can overstate field
@@ -232,7 +240,7 @@ decision changes. Feature spaces can be compared across architectures
 class geometry: a label-preserving perturbation can move a sample toward another
 class centroid or outside the clean manifold, turning continuous displacement
 into a discrete error. This is the conceptual basis for asking whether the
-lab-to-field gap lies partly in the frozen representation. WoodID's spatial
+acquisition-shift gap lies partly in the frozen representation. WoodID's spatial
 evidence also motivates patch processing and cautious explanations
 \citep{selvaraju2020gradcam,bai2021explainable}; extended spatial/CAM-proxy
 diagnostics are reported in the Supplementary Material.
@@ -251,12 +259,13 @@ data \citep{nguyen2025d3m}, and risk monitors for test-time adaptation track
 unlabeled performance degradation under growing shift
 \citep{schirmer2025monitoring}. Together, these studies establish embedding
 divergence as a general monitoring signal for performance degradation.
-Recent WoodID work on hyperspectral, in-situ, and high-resolution patch-voting
-systems does not address acquisition-shift representation drift, shared-species
-cross-source transfer, or cross-magnification asymmetry. MRD-Wood is positioned
-accordingly. Its contributions are a controlled decomposition locating part of
-the gap in frozen representation geometry, the VN26 cross-magnification
-asymmetry, and the real cross-source boundary. The monitor instantiates
+Prior WoodID studies include multi-source and held-out-source evaluation, but do
+not jointly analyze acquisition-shift representation drift, direct pairwise
+transfer over shared accepted species, and directional cross-magnification
+asymmetry. MRD-Wood is positioned accordingly. Its contributions are a
+controlled decomposition locating part of the gap in frozen representation
+geometry, the VN26 cross-magnification asymmetry, and the evaluated direct
+cross-source boundary. The monitor instantiates
 established distance and two-sample methods and evaluates their validity under
 WoodID acquisition shifts. Comparative detector benchmarking remains outside
 this domain-diagnostic scope.
@@ -279,6 +288,7 @@ Study & Multi-source & Stress test & Repr. diagnosis & Cross-source & Cross-mag.
 \citet{sun2021smallwood}, \citet{fabijanska2021woodcore} & -- & -- & -- & -- & -- & -- \\
 \citet{herrera2026goimai} & -- & -- & -- & -- & -- & -- \\
 \citet{ravindran2021field}, \citet{ravindran2022caveat} & partial & partial & -- & -- & -- & -- \\
+\citet{ravindran2022multixylarium} & \checkmark & -- & -- & partial & -- & -- \\
 \citet{nguyentrong2023magnification} & -- & partial & -- & -- & \checkmark & -- \\
 \citet{owens2025robustness} & -- & \checkmark & -- & -- & -- & -- \\
 \citet{greco2024driftlens,tziouvaras2025alert,nguyen2025d3m} & partial & -- & \checkmark & -- & -- & \checkmark \\
@@ -301,7 +311,7 @@ secondary views of internal organization, not as primary evidence.
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=0.75\linewidth]{results/figures/mrd_wood_overview_figure1.png}
-\caption{Overview of MRD-Wood (Mapping Representation Drift). Frozen pretrained backbones are evaluated under synthetic and real acquisition shifts. Representation drift quantifies the lab-to-field gap and localizes part of it in the model itself, which manifests as two WoodID-specific boundaries---real cross-source collapse and cross-magnification asymmetry---and supports a derived label-free detection signal.}
+\caption{Overview of MRD-Wood (Mapping Representation Drift). Frozen pretrained backbones are evaluated under synthetic and real acquisition shifts. Representation drift quantifies the acquisition-shift gap and localizes part of it in the model itself, which manifests as two WoodID-specific boundaries---real cross-source collapse and cross-magnification asymmetry---and supports a derived label-free detection signal.}
 \label{fig:mrd_framework}
 \end{figure}
 
@@ -368,16 +378,20 @@ recognition failure.
 For real shifts without same-image pairs, the paired quantity above is not
 available and should not be conflated with an unpaired distributional signal. We therefore
 use distributional drift between feature sets. For a source batch $S$ and target
-batch $T$, the class-centroid version used in the real cross-source and
-cross-magnification analyses is
+batch $T$, let $S_c$ and $T_c$ contain the features of a shared species $c$.
+The class-centroid version used in the real cross-source and
+cross-magnification analyses is computed separately for each shared species:
 \begin{equation}
-  \Delta_{\mathrm{dist}}(S,T)
-  =1-\frac{\bar z_S^\top \bar z_T}{\|\bar z_S\|_2\,\|\bar z_T\|_2},
+  \Delta_{\mathrm{dist},c}(S,T)
+  =1-\frac{\mu_{S,c}^\top \mu_{T,c}}
+  {\|\mu_{S,c}\|_2\,\|\mu_{T,c}\|_2},
   \qquad
-  \bar z_S=\frac{1}{|S|}\sum_{x_i\in S} \hat z_i .
+  \mu_{S,c}=\frac{1}{|S_c|}\sum_{x_i\in S_c} \hat z_i .
 \end{equation}
-This distributional signal asks whether two acquisition sources or magnification
-levels occupy different regions of the frozen feature space. Tier-A and Tier-B
+Results aggregate these values only after computing the source--target
+displacement for each shared class. This distributional signal asks whether
+corresponding species under two acquisition sources or magnification levels
+occupy different regions of the frozen feature space. Tier-A and Tier-B
 therefore support claims about paired feature drift $\Delta_f$, whereas Tier-C,
 Tier-D, and the reference-bank monitor support claims about distributional
 feature drift and degradation without same-image pairing.
@@ -477,7 +491,8 @@ discrepancy between $B_0=\{a_i\}_{i=1}^{n}$ and $B_t=\{b_j\}_{j=1}^{m}$,
   +\frac{1}{m^2}\sum_{i,j} k(b_i,b_j)
   -\frac{2}{nm}\sum_{i,j} k(a_i,b_j),
 \end{equation}
-where $k(a,b)=\exp(-\gamma\|a-b\|_2^2)$ and $\gamma$ is set by a median-distance
+This is the biased empirical estimator, including diagonal kernel terms.
+Here $k(a,b)=\exp(-\gamma\|a-b\|_2^2)$ and $\gamma$ is set by a median-distance
 heuristic on the compared feature batches; $\widehat{MMD}^2$ is small when the two
 feature distributions coincide and grows as they diverge. All four monitors
 require only the clean reference bank $B_0$ and use \emph{no labels} for the
@@ -568,6 +583,7 @@ cannot be reduced to blur or compression alone.
 \caption{Dataset organization and analytical role in the study.}
 \label{tab:datasets}
 \scriptsize
+\setlength{\tabcolsep}{2.8pt}
 \begin{tabular}{p{0.09\linewidth}p{0.20\linewidth}p{0.13\linewidth}p{0.25\linewidth}p{0.23\linewidth}}
 \toprule
 Tier & Dataset/source & Label space & Acquisition summary & Role \\
@@ -624,6 +640,16 @@ following a conservative local-voting protocol; Appendix~\ref{app:additional_che
 verifies that the drift/drop conclusion is stable for $k\in\{1,3,5,10\}$ and for
 nearest-centroid classification.
 
+The Tier-C source probe is interpreted separately from species transfer. A
+two-centroid source classifier is evaluated with balanced source--species
+sampling under held-out image splits and, more stringently,
+leave-one-species-out evaluation. In the latter protocol, source centroids are
+estimated from all but one shared species and evaluated on the excluded species,
+so source prediction cannot rely on the test species or on source-specific class
+counts. The corresponding species result remains the directed cross-source
+nearest-centroid task on the same shared species. The separate Tier-C boundary
+experiment uses the directed cosine 5-NN transfer task described above.
+
 \subsection{Experiment groups and statistical analysis}
 \label{sec:quant_protocol}
 
@@ -673,12 +699,12 @@ estimates. Spatial and CAM-proxy analyses remain secondary diagnostics.
 \subsection{The gap exists: clean accuracy does not determine robustness}
 \label{sec:perturbation_results}
 
-The first experiment establishes the failure phenomenon that MRD-Wood is designed to explain. Figures~\ref{fig:acc_heatmap} and~\ref{fig:severity} show that clean accuracy is high for all models (0.931--0.956), but perturbation robustness differs substantially. DINOv2-B and EfficientNet-B3 have the highest mean perturbed accuracy (0.736 and 0.708) even though HRNet-32 has the highest clean accuracy (0.956), while ResNet-50 has the largest mean drop (0.297). Table~\ref{tab:robustness} gives the per-backbone values. Thus, clean-domain performance under this representation-separability benchmark is a weak basis for selecting a deployment model.
+The first experiment establishes the failure phenomenon that MRD-Wood is designed to explain. Figures~\ref{fig:acc_heatmap} and~\ref{fig:severity} show that clean accuracy is high for all models (0.931--0.956), but perturbation robustness differs substantially. DINOv2-B and EfficientNet-B3 have the highest mean perturbed accuracy (0.736 and 0.708) even though HRNet-32 has the highest clean accuracy (0.956), while ResNet-50 has the largest mean drop (0.297). Table~\ref{tab:robustness} gives the per-backbone values. Thus, clean-domain performance under this representation-separability benchmark is a weak basis for selecting a robust backbone or representation.
 
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=\linewidth]{results/figures/fig2a_accuracy_heatmap.png}
-\caption{Accuracy heatmap across backbones and perturbation families.}
+\caption{Mean accuracy-drop heatmap across backbones and perturbation families.}
 \label{fig:acc_heatmap}
 \end{figure}
 
@@ -752,7 +778,7 @@ pooled and controlled associations, with the controlled estimates providing the
 primary evidence. After controlling for dataset, backbone, perturbation family,
 and severity, feature drift retains a positive partial correlation with accuracy
 drop ($r=0.623$, $n=1596$), and in the complete-case hierarchical model it adds
-$\Delta R^2=0.031$ beyond the same metadata and severity controls
+$\Delta R^2=0.032$ beyond the same metadata and severity controls
 (Table~\ref{tab:hier_strict}). The pooled association is larger ($r=0.908$,
 Spearman $\rho=0.937$, $n=1596$; clustered-bootstrap 95\% CI for $r$:
 $[0.892,0.922]$) and serves as an upper-bound diagnostic association because it
@@ -795,7 +821,7 @@ FGCS change & 0.340 & 1596 \\
 \end{tabular}
 \end{table}
 
-Rank-based and grouped checks complement the pooled Pearson coefficient. Feature drift has Spearman $\rho=0.937$ over the same 1596 records. After controlling for dataset, backbone, and perturbation family by residualization, the partial correlation between feature drift and accuracy drop remains high ($r=0.795$); after adding perturbation severity to the controls, the association is smaller but still positive ($r=0.623$, $n=1596$). This shows that drift partly acts as a fine-grained severity proxy, but it retains information beyond nominal severity. The relationship is also consistent within every Tier-A dataset and every backbone, as summarized in Table~\ref{tab:consistency}; these are condition-level mean-drift versus mean-drop correlations, so they illustrate the shared severity trend rather than replacing the controlled partial-correlation evidence. Leave-one-dataset-out validation remains strong: when each Tier-A dataset is held out in turn, the mean held-out feature-drift/drop correlation is $r=0.913$, with a minimum of $0.895$.
+Rank-based and grouped checks complement the pooled Pearson coefficient. Feature drift has Spearman $\rho=0.937$ over the same 1596 records. After controlling for perturbation identity by residualization, the partial correlation between feature drift and accuracy drop remains high ($r=0.795$); under the stricter control for dataset, backbone, perturbation family, and severity, the association is smaller but still positive ($r=0.623$, $n=1596$). This shows that drift partly acts as a fine-grained severity proxy, but it retains information beyond nominal severity. The relationship is also consistent within every Tier-A dataset and every backbone, as summarized in Table~\ref{tab:consistency}; these are condition-level mean-drift versus mean-drop correlations, so they illustrate the shared severity trend rather than replacing the controlled partial-correlation evidence. Leave-one-dataset-out validation remains strong: when each Tier-A dataset is held out in turn, the mean held-out feature-drift/drop correlation is $r=0.913$, with a minimum of $0.895$.
 
 The same conclusion holds when the decision rule is changed. The frozen linear
 probe in Appendix~\ref{app:additional_checks} is a multinomial logistic
@@ -841,8 +867,8 @@ Backbone & 0.926--0.965 & 228 \\
 Tier-A dataset & 0.895--0.931 & 532 \\
 Perturbation type & 0.594--0.902 & 63--126 \\
 Leave-one-dataset-out & mean 0.913, min 0.895 & held-out datasets \\
-Partial correlation with grouped controls & 0.795 & 1596 \\
-Partial correlation with grouped+severity controls & 0.623 & 1596 \\
+Partial correlation controlling perturbation identity & 0.795 & 1596 \\
+Partial correlation with metadata+severity controls & 0.623 & 1596 \\
 Mixed model with grouped controls & $\beta=0.737$ & 1596 \\
 \bottomrule
 \end{tabular}
@@ -852,24 +878,33 @@ At the global representation level, recognition failure is accompanied by measur
 
 \subsection{The gap is partly in the model, not only the image}
 
-The strongest evidence comes from the Tier-C source-vs-species probe
+Direct supporting evidence comes from the Tier-C source-vs-species probe
 (Fig.~\ref{fig:source_species_probe}). On the same accepted species, a
-two-centroid rule recovers acquisition source with accuracy 0.954 for
-BFS46$\leftrightarrow$FSDM41 and 0.967 for
-DTSR14$\leftrightarrow$WOODAUTH, while cross-source species recognition is only
-0.014 and 0.278. Frozen features therefore retain a readily recoverable source
-signature even when species geometry fails to align across sources. The global
+balanced leave-one-species-out two-centroid rule predicts acquisition source
+with mean accuracy 0.923 for BFS46$\leftrightarrow$FSDM41 and 0.940 for
+DTSR14$\leftrightarrow$WOODAUTH, well above the balanced binary-source chance
+level of 0.5. Cross-source species recognition is 0.014 against 24-class chance
+0.042 and 0.278 against four-class chance 0.25, respectively. Source prediction
+remains above 0.877 for every evaluated backbone, despite the test species being
+excluded from source-centroid estimation. Frozen features therefore retain a
+transferable source signature even when species geometry is below or near its
+task-specific chance level across sources. The global
 between-source centroid distance is 0.699 times the within-source
 between-species distance for BFS46$\leftrightarrow$FSDM41 but 1.436 times for
-DTSR14$\leftrightarrow$WOODAUTH. Thus, source-dominant and misaligned species
-geometry can coexist without reducing to a single global offset.
+DTSR14$\leftrightarrow$WOODAUTH. Thus, a transferable source signature and
+misaligned species geometry can coexist without reducing to a single global
+offset.
 
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=\linewidth]{results/figures/source_vs_species_probe.png}
-\caption{Source-vs-species probe on shared Tier-C species. Acquisition source is
-highly recoverable from frozen features, whereas species recognition transfers
-poorly across sources.}
+\caption{Source-vs-species probe on shared Tier-C species. The source result is
+balanced leave-one-species-out nearest-centroid accuracy: source centroids are
+estimated without the test species. Error bars show standard deviation across
+seven backbones; short dashed segments mark task-specific chance (0.5 for binary
+source prediction, $1/24$ and $1/4$ for the two species-recognition tasks).
+Acquisition source remains predictable, whereas species recognition is below or
+near chance across sources.}
 \label{fig:source_species_probe}
 \end{figure}
 
@@ -895,7 +930,7 @@ than the within-space value ($r=0.623$).}
 \end{figure}
 
 Together, the source probe and cross-space control locate part of the
-lab-to-field gap in the frozen representation itself. Spatial and CAM-proxy
+acquisition-shift gap in the frozen representation itself. Spatial and CAM-proxy
 metrics add only $\Delta R^2=0.004$ and $0.001$ after the global geometry blocks;
 they are retained as stability diagnostics in Supplementary
 Section~\ref{app:spatial_cam}, not as competing explanations. The next two
@@ -914,7 +949,7 @@ where the same source-sensitive organization is quantified as a
 marginal-versus-class-conditional gap
 (Section~\ref{sec:refbank_results}).
 
-\subsection{Consequence 1: the real cross-source transfer boundary}
+\subsection{Consequence 1: the direct cross-source transfer boundary}
 \label{sec:tierc_cross_source}
 
 Tier-C tests the same diagnostic idea in an unpaired real-shift setting. The
@@ -943,7 +978,7 @@ geometry rather than only weak transfer. This interpretation remains subject to
 the coarseness of accepted-name matching across datasets: a shared GBIF name
 does not guarantee identical taxonomic granularity, specimen provenance, or
 labeling practice.
-Together with the source probe, this below-chance result is the
+Together with the held-out-species source probe, this below-chance result is the
 class-conditional failure that the later marginal MMD decomposition cannot
 recover from pooled feature distributions alone.
 
@@ -1132,17 +1167,13 @@ Tier-C cross-source batches (100\%); pooled over Tier-C and Tier-D, the
 real-shift alarm count is 60/70 batches. This provides a real-shift validity
 check beyond the synthetic benchmark: the detector fires on the evaluated
 unpaired acquisition mismatches. Binary detection and severity estimation are
-distinct evaluation targets: the calibrated capped-score protocol yields the
-60/70 alarm count, whereas the analyses below assess whether raw score magnitude
-tracks accuracy loss.
-For cross-condition magnitude comparisons, Supplementary
-Fig.~\ref{fig:monitor_real_shift}
-uses the full-feature MMD decomposition scores rather than the capped
-alarm-score draws. These mean RBF-MMD scores are not monotone in the
-coarse intended tier ordering used in this real-shift monitor table
+distinct evaluation targets. Supplementary Fig.~\ref{fig:monitor_real_shift}
+retains the capped-score protocol used for the 60/70 alarm count. Its mean
+RBF-MMD scores are not monotone in the coarse intended tier ordering
 (Spearman $\rho=0.300$ against the predefined clean/Tier-B/Tier-D/Tier-C
-ordering): the extremely low-accuracy BFS46$\leftrightarrow$FSDM41 transfer has
-a lower mean MMD score (0.102) than the less severe
+ordering). A separate full-feature decomposition confirms the same Tier-C
+inversion: the extremely low-accuracy BFS46$\leftrightarrow$FSDM41 transfer has
+a lower mean MMD magnitude (0.102) than the less severe
 DTSR14$\leftrightarrow$WOODAUTH transfer (0.193).
 The pairs also differ in shared label-space size (24 versus four species).
 Matching BFS46$\leftrightarrow$FSDM41 to four randomly selected shared species
@@ -1172,13 +1203,13 @@ separates shift detection from severity ranking more explicitly. Averaged by
 condition, every non-clean condition has a higher mean RBF-MMD score than the
 clean Tier-A baseline, so detecting that a batch has moved away from $B_0$ is
 straightforward in this benchmark. Ranking how damaging the shift is remains
-harder: using the true measured failure rates for the eight condition groups in
-this analysis, the condition-level Spearman correlation between mean MMD and
-failure is only $\rho=0.548$. The most severe real shift,
-BFS46$\leftrightarrow$FSDM41, has mean failure 0.990 but a lower uncapped
-full-feature MMD
-(0.102) than the less severe DTSR14$\leftrightarrow$WOODAUTH transfer
-(failure 0.680, MMD 0.193). A secondary spread regression improves descriptive
+harder: under the same capped-score protocol, the condition-level Spearman
+correlation between mean MMD and measured failure across eight groups is only
+$\rho=0.548$. The most severe real shift,
+BFS46$\leftrightarrow$FSDM41, has mean failure 0.990 but a lower capped mean MMD
+(0.100) than the less severe DTSR14$\leftrightarrow$WOODAUTH transfer
+(failure 0.680, MMD 0.196). The separate full-feature comparison gives the same
+ordering (0.102 versus 0.193). A secondary spread regression improves descriptive
 fit across eight heterogeneous groups but is not stable within Tier-C
 (standardized $\beta=-0.050$); full results are reported in Supplementary
 Fig.~\ref{fig:monitor_severity_dissociation}. These results characterize
@@ -1201,7 +1232,7 @@ similarity ($K_{AB}=0.5875$ versus 0.5698). MMD compares marginal feature
 distributions and cannot determine whether species-conditional components
 remain aligned: pooled overlap can remain high when one species is displaced
 toward another species' feature region. This interpretation is consistent with
-the source-dominant representation found by the source-versus-species probe
+the transferable source signature found by the source-versus-species probe
 (Fig.~\ref{fig:source_species_probe}) and the near-zero cross-source transfer, while
 the shared-class control confirms that reference-bank composition also changes
 the marginal score (Supplementary Fig.~\ref{fig:mmd_confound}). Thus the
@@ -1270,36 +1301,38 @@ shifts.
 
 The controlled results support a bounded conclusion. Representation drift
 contains a modest signal beyond dataset, backbone, perturbation family, and
-severity (partial $r=0.623$, $\Delta R^2=0.031$), while only a small component
+severity (partial $r=0.623$, $\Delta R^2=0.032$), while only a small component
 transfers across feature spaces ($r=0.178$). The pooled same-space correlation
 ($r=0.908$) is therefore an upper bound, not the principal evidence. This pattern
 is scientifically informative: drift is largely a fine-grained severity proxy
 plus a representation-specific component, with a smaller transferable core.
-The source-vs-species probe strengthens that reading by showing that frozen
-features retain acquisition-source identity even when species geometry does not
-align across sources. Together with the margin gate, these results explain why
-drift can track errors without making the relationship definitional or causal.
+The held-out-species source probe strengthens that reading by showing that
+acquisition-source identity transfers to species excluded from source-centroid
+estimation even when species geometry does not align across sources. Together
+with the margin gate, these results provide a coherent
+empirical account of why drift can track errors without making the relationship
+definitional or causal.
 
-The real-shift analyses reveal a single class-conditional thread across three
+The real-shift analyses reveal a consistent class-conditional thread across three
 otherwise different tests. The source-versus-species probe
-(Fig.~\ref{fig:source_species_probe}) shows that acquisition source remains
-recoverable; the below-chance cross-source result
+(Fig.~\ref{fig:source_species_probe}) shows that source identity remains
+predictable for held-out species; the below-chance cross-source result
 (Section~\ref{sec:tierc_cross_source}) shows that species identity is
 systematically misaligned across those sources; and the kernel decomposition
 (Section~\ref{sec:refbank_results}) shows why a marginal monitor cannot fully
-represent that failure. Together, these observations identify the evaluated
-lab-to-field gap as class-conditional misalignment within a source-dominated
-marginal organization. This mechanism explains both cross-source collapse and
-the monitor's detect-but-not-rank behaviour, and motivates
+represent that failure. Together, these observations are consistent with
+class-conditional misalignment within a source-encoded marginal organization
+under the evaluated acquisition shifts. This empirical explanation connects
+cross-source collapse with the monitor's detect-but-not-rank behaviour and motivates
 species-conditional source invariance as the mitigation target.
 
 \subsection{WoodID-specific consequences}
 
 The two real-shift experiments expose consequences that clean accuracy and
 generic corruption tests miss. First, shared-species cross-source transfer can
-collapse even when source identity remains easily recoverable, indicating that
-the frozen representation organizes acquisition source more consistently than
-cross-source species identity. Second, magnification transfer is asymmetric and
+collapse even when acquisition source remains predictable on held-out species,
+indicating that acquisition source and cross-source species identity are
+organized very differently. Second, magnification transfer is asymmetric and
 non-monotone: x50 is a locus of representational failure, and the easier transfer
 direction changes across magnification pairs. This is not adequately described
 as generic image corruption. Optical scale changes which vessels, rays,
@@ -1320,7 +1353,7 @@ More fundamentally, the kernel cross term measures pooled source overlap rather
 than preservation of species-conditional geometry: the catastrophic
 BFS46$\leftrightarrow$FSDM41 pair has greater $K_{AB}$ than the milder pair.
 This marginal-versus-conditional mismatch links the monitor limitation to the
-source-dominant geometry diagnosed above. The matched four-species control
+source-encoded geometry diagnosed above. The matched four-species control
 isolates the same limitation from label-space size: MMD differs by only 0.016,
 whereas failure remains 0.125 higher for BFS46/FSDM41.
 A fixed threshold transferred to unseen perturbation
@@ -1406,12 +1439,12 @@ establishes universal severity calibration for unseen field shifts.
 
 MRD-Wood provides a controlled diagnosis of WoodID failure under acquisition
 shift. After metadata and severity controls, paired drift retains partial
-$r=0.623$ and adds $\Delta R^2=0.031$; the smaller cross-space partial
+$r=0.623$ and adds $\Delta R^2=0.032$; the smaller cross-space partial
 correlation ($r=0.178$) shows that the transferable diagnostic core is real but
 limited. The pooled $r=0.908$ is consequently an upper bound shaped by severity
-and same-space coupling. Source identity is highly recoverable from frozen
-features even when cross-source species recognition fails, locating part of the
-laboratory-to-field gap in the representation rather than only in image quality.
+and same-space coupling. Acquisition source remains predictable for held-out
+species even when cross-source species recognition fails, locating part of the
+acquisition-shift gap in the representation rather than only in image quality.
 
 The principal domain findings are the cross-source collapse boundary and the
 asymmetric, non-monotone VN26 magnification transfer. A standard reference-bank
@@ -1782,7 +1815,7 @@ before adding representation metrics.}
 Model & $R^2$ & $\Delta R^2$ \\
 \midrule
 Controls only & 0.897 & 0.897 \\
-+ Feature drift & 0.929 & 0.031 \\
++ Feature drift & 0.929 & 0.032 \\
 + Feature geometry & 0.937 & 0.008 \\
 + Spatial metrics & 0.938 & 0.001 \\
 + CAM-proxy metrics & 0.938 & 0.000 \\
@@ -1903,19 +1936,19 @@ Batch size & Ref. 100 & Ref. 250 & Ref. 440 & Ref. 500 & Ref. 1000 \\
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=\linewidth]{results/figures/monitor_on_real_shift.png}
-\caption{Reference-bank RBF-MMD scores on clean and real unpaired shifts. The
-synthetic-calibrated threshold detects acquisition mismatch. Bars for the real
-cross-source conditions use the canonical full-feature decomposition scores;
-raw MMD is not monotone in cross-source failure severity.}
+\caption{Reference-bank RBF-MMD scores on clean and real unpaired shifts under
+the capped alarm protocol. The synthetic-calibrated threshold detects
+acquisition mismatch, but raw MMD is not monotone in cross-source failure
+severity.}
 \label{fig:monitor_real_shift}
 \end{figure}
 
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=\linewidth]{results/figures/monitor_severity_dissociation.png}
-\caption{Shift detection and severity ranking dissociate for the reference-bank
-RBF-MMD monitor. Mean MMD separates shifted conditions from the clean Tier-A
-baseline but is not monotone in failure severity. A secondary spread term
+\caption{Shift detection and severity ranking dissociate under the capped
+reference-bank RBF-MMD protocol. Mean MMD separates shifted conditions from the
+clean Tier-A baseline but is not monotone in failure severity. A secondary spread term
 improves descriptive fit over eight groups but is not stable within Tier-C;
 the matched-class control further shows sensitivity to reference-bank
 composition. Raw MMD is therefore an acquisition-mismatch score rather than a

@@ -271,6 +271,8 @@ def run(
                         _write_checkpoint(ds, bb, pair_rows)
                     logger.info('%s/%s done (%d rows)', bb, ds, len(pair_rows))
 
+    # Rebuild the final table from checkpoints when possible. This avoids
+    # appending checkpoint hits a second time after they were loaded above.
     ckpt_rows = []
     for ds in datasets:
         for bb in backbones:
@@ -278,7 +280,7 @@ def run(
             if ckpt is not None:
                 ckpt_rows.extend(ckpt.to_dict('records'))
     if ckpt_rows:
-        rows.extend(ckpt_rows)
+        rows = ckpt_rows
 
     acc = pd.DataFrame(rows).drop_duplicates(
         subset=['dataset', 'backbone', 'perturbation', 'severity', 'tag', 'rule'],
