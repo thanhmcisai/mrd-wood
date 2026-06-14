@@ -1,0 +1,68 @@
+{
+  "created_utc": "2026-06-14T06:32:16.908548+00:00",
+  "environment": {
+    "WOOD_BASE": "",
+    "WOOD_DATASETS_DIR": "",
+    "WOOD_RESULTS_DIR": "/home/thanh/Wood_Research_git/results"
+  },
+  "experiment": "exp7_controlled_hierarchical",
+  "git_commit": "5f8511059626644822a02b3fe80944d49a67f3f2",
+  "inputs": [
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp6_multilevel_table.csv",
+      "sha256": "99a117e459e71786f6239514df7eec649e17e4b44d3106469e69c7cb981e3ddc"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_full_record_primary_r2.csv",
+      "sha256": "4289a25d722946df22f23af71cc1c98182970c4e08de2b08cca81e629fdcd708"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_full_record_partial_correlation.csv",
+      "sha256": "67a1556905e260acd99a9dc64a242958b73bf32d03a12d735584ed083b7b1833"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_controlled_hierarchical_r2.csv",
+      "sha256": "fb1a7f3c0a6e752d58e6a435ee8c02972647f546254b6446c262787b4c223d22"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_partial_correlations_severity.csv",
+      "sha256": "76dabd32b3f2fddaf160cad677ab239936f4fe3079198a026e4efddef36c0a88"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_complete_case_partial_correlation.csv",
+      "sha256": "f9970d0f2e2a2ee6eaa9518f73a7ca9fc29d588fb13c6f1f132b8be2b259088c"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_spatial_cam_selection_summary.csv",
+      "sha256": "ab248ce95e08375c598762dc2df9d95eda81554f4f43eeacbf44e1a59de19449"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_spatial_cam_selection_coverage.csv",
+      "sha256": "80843f261d189c60f240ac59d14c0a186bc2e346b6b0b5590eec6a72309cd403"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp7_non_patch_sensitivity.csv",
+      "sha256": "c8c8819e9e5ac1f54259b1dd4fbd829d491dbc23a90944c968ec58196827b487"
+    }
+  ],
+  "parameters": {
+    "categorical_controls": [
+      "dataset",
+      "backbone",
+      "perturbation",
+      "severity"
+    ],
+    "complete_case_hierarchy": true,
+    "complete_case_partial_correlation": true,
+    "full_record_primary_model": true,
+    "non_patch_sensitivity": "WRD25_only",
+    "residualization": "one_hot_linear_regression",
+    "spatial_cam_selection_diagnostics": true
+  },
+  "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31",
+  "protocol": "metadata_and_categorical_severity_controls_v2",
+  "python": "3.9.1",
+  "results_dir": "/home/thanh/Wood_Research_git/results"
+}

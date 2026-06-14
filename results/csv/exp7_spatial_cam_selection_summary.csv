@@ -1,0 +1,4 @@
+subset,n,fraction_of_global_records,mean_feature_drift,mean_accuracy_drop,smd_feature_drift_selected_vs_omitted,smd_accuracy_drop_selected_vs_omitted
+all_global_records,1596,1.0,0.31454136954635215,0.2565766447118376,0.48693886480751075,0.5287851514697058
+spatial_cam_selected,630,0.39473684210526316,0.3869686785065347,0.3464736117031287,,
+spatial_cam_omitted,966,0.6052631578947368,0.2673061680505809,0.19794818797838695,,

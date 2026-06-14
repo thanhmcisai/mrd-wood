@@ -445,8 +445,8 @@ def plot_cam_cluster_overlay(ds: str = 'WRD25', sample_idx: int = 0):
 
 def plot_feature_geometry_failure():
     df = pd.read_csv(V4_CSV / 'exp1b_feature_geometry.csv')
-    partial = pd.read_csv(V4_CSV / 'exp7_partial_correlations_severity.csv')
-    hierarchical = pd.read_csv(V4_CSV / 'exp7_controlled_hierarchical_r2.csv')
+    partial = pd.read_csv(V4_CSV / 'exp7_full_record_partial_correlation.csv')
+    hierarchical = pd.read_csv(V4_CSV / 'exp7_full_record_primary_r2.csv')
     df = df.copy()
     df['figure_group'] = df['perturbation'].map(_figure_group)
     pert = df.groupby('figure_group', as_index=False).agg(
@@ -475,16 +475,19 @@ def plot_feature_geometry_failure():
                            color=BB_COLORS.get(bb), label=BB_LABEL.get(bb, bb))
     r_val = df[['feature_drift', 'drop']].dropna().corr().iloc[0, 1]
     partial_r = float(
-        partial.loc[partial['metric'].eq('feature_drift'), 'r_partial_severity'].iloc[0]
+        partial.loc[
+            partial['metric'].eq('feature_drift'),
+            'r_partial_full_record',
+        ].iloc[0]
     )
     delta_r2 = float(
         hierarchical.loc[
-            hierarchical['model'].eq('M1: + feature drift'), 'delta_r2'
+            hierarchical['model'].eq('P1: + feature drift'), 'delta_r2'
         ].iloc[0]
     )
     annotation = (
         f'raw same-space r={r_val:.3f} (upper bound)\n'
-        f'controlled partial r={partial_r:.3f}; ΔR²={delta_r2:.3f}'
+        f'controlled full-record partial r={partial_r:.3f}; ΔR²={delta_r2:.3f}'
     )
     axes[1, 1].text(0.97, 0.05, annotation, transform=axes[1, 1].transAxes,
                     ha='right', va='bottom', fontsize=8,

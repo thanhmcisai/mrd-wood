@@ -105,28 +105,42 @@ def _metric_specs() -> list[tuple[str, Callable[[], float], int, str, str, str, 
             "controlling perturbation identity",
         ),
         (
-            "drift_partial_metadata_severity",
+            "drift_partial_metadata_severity_full_record",
             lambda: _row_value(
-                "exp7_partial_correlations_severity.csv", "r_partial_severity",
+                "exp7_full_record_partial_correlation.csv",
+                "r_partial_full_record",
                 metric="feature_drift",
             ),
             3,
-            "exp7_partial_correlations_severity.csv",
+            "exp7_full_record_partial_correlation.csv",
             "Residualization on dataset, backbone, perturbation family, and severity.",
-            "Primary controlled evidence for the drift-drop relationship.",
+            "Primary controlled evidence on all records with global geometry.",
             "partial $r=0.623$",
+        ),
+        (
+            "drift_partial_metadata_severity_complete_case",
+            lambda: _row_value(
+                "exp7_complete_case_partial_correlation.csv",
+                "r_partial_complete_case",
+                metric="feature_drift",
+            ),
+            3,
+            "exp7_complete_case_partial_correlation.csv",
+            "Residualization on dataset, backbone, perturbation family, and severity over the fixed spatial/CAM diagnostic subset.",
+            "Secondary subset analysis for the multilevel hierarchy.",
+            "partial $r=0.552$",
         ),
         (
             "drift_incremental_r2",
             lambda: _row_value(
-                "exp7_controlled_hierarchical_r2.csv", "delta_r2",
-                model="M1: + feature drift",
+                "exp7_full_record_primary_r2.csv", "delta_r2",
+                model="P1: + feature drift",
             ),
             3,
-            "exp7_controlled_hierarchical_r2.csv",
-            "Complete-case hierarchical model after metadata and severity controls.",
+            "exp7_full_record_primary_r2.csv",
+            "Full-record model after metadata and severity controls.",
             "Primary incremental explanatory contribution.",
-            "\\Delta R^2=0.032",
+            "\\Delta R^2=0.048",
         ),
         (
             "cross_space_partial_r",
@@ -139,6 +153,77 @@ def _metric_specs() -> list[tuple[str, Callable[[], float], int, str, str, str, 
             "Off-diagonal drift-space/decision-space pairs with metadata and severity controls.",
             "Small transferable diagnostic component independent of same-space matching.",
             "cross-space partial correlation",
+        ),
+        (
+            "cross_space_partial_r_ci_low",
+            lambda: _single_value(
+                "exp_cross_space_drift_summary.csv",
+                "pooled_cross_space_partial_r_ci_low",
+            ),
+            3,
+            "exp_cross_space_drift_summary.csv",
+            "Condition-block bootstrap over aligned Tier-A conditions.",
+            "Uncertainty for the controlled cross-space diagnostic core.",
+            "$[0.119,0.235]$",
+        ),
+        (
+            "cross_space_partial_r_ci_high",
+            lambda: _single_value(
+                "exp_cross_space_drift_summary.csv",
+                "pooled_cross_space_partial_r_ci_high",
+            ),
+            3,
+            "exp_cross_space_drift_summary.csv",
+            "Condition-block bootstrap over aligned Tier-A conditions.",
+            "Uncertainty for the controlled cross-space diagnostic core.",
+            "$[0.119,0.235]$",
+        ),
+        (
+            "non_patch_wrd25_partial_r",
+            lambda: _single_value("exp7_non_patch_sensitivity.csv", "partial_r"),
+            3,
+            "exp7_non_patch_sensitivity.csv",
+            "WRD25-only sensitivity excluding the patch-derived PCA11 and DTSR14 datasets.",
+            "Leakage sensitivity for the primary controlled drift/drop association.",
+            "WRD25-only non-patch sensitivity",
+        ),
+        (
+            "non_patch_wrd25_delta_r2",
+            lambda: _single_value("exp7_non_patch_sensitivity.csv", "delta_r2"),
+            3,
+            "exp7_non_patch_sensitivity.csv",
+            "WRD25-only sensitivity excluding the patch-derived PCA11 and DTSR14 datasets.",
+            "Leakage sensitivity for the primary controlled drift/drop association.",
+            "WRD25-only non-patch sensitivity",
+        ),
+        (
+            "crossmag_nonmonotone_difference",
+            lambda: _single_value(
+                "exp5_crossmag_nonmonotonicity.csv", "mean_difference"
+            ),
+            3,
+            "exp5_crossmag_nonmonotonicity.csv",
+            "Backbone-bootstrap comparison of bidirectional x10/x50 and x20/x50 transfer.",
+            "Uncertainty for the non-monotone x50-locus claim.",
+            "backbone-bootstrap difference",
+        ),
+        (
+            "crossmag_nonmonotone_ci_low",
+            lambda: _single_value("exp5_crossmag_nonmonotonicity.csv", "ci_low"),
+            3,
+            "exp5_crossmag_nonmonotonicity.csv",
+            "Backbone-bootstrap comparison of bidirectional x10/x50 and x20/x50 transfer.",
+            "Uncertainty for the non-monotone x50-locus claim.",
+            "$[0.043,0.112]$",
+        ),
+        (
+            "crossmag_nonmonotone_ci_high",
+            lambda: _single_value("exp5_crossmag_nonmonotonicity.csv", "ci_high"),
+            3,
+            "exp5_crossmag_nonmonotonicity.csv",
+            "Backbone-bootstrap comparison of bidirectional x10/x50 and x20/x50 transfer.",
+            "Uncertainty for the non-monotone x50-locus claim.",
+            "$[0.043,0.112]$",
         ),
         (
             "tierc_bfs_fsdm_heldout_species_source_acc",
@@ -191,6 +276,81 @@ def _metric_specs() -> list[tuple[str, Callable[[], float], int, str, str, str, 
             "Directed cross-source cosine nearest-centroid species transfer.",
             "Class-conditional counterpart to held-out source prediction.",
             "and 0.278",
+        ),
+        (
+            "tierc_bfs_fsdm_null_max_p",
+            lambda: float(
+                _read("exp_tierc_cross_source_transfer.csv")
+                .query("pair == 'BFS46<->FSDM41'")["p_below_null"]
+                .max()
+            ),
+            4,
+            "exp_tierc_cross_source_transfer.csv",
+            "One-sided empirical label-permutation tests within each backbone and direction.",
+            "Largest p-value among the 14 primary-pair transfer cells.",
+            "p\\leq0.0003",
+        ),
+        (
+            "tierc_bfs_fsdm_cells_below_null",
+            lambda: int(
+                (
+                    _read("exp_tierc_cross_source_transfer.csv")
+                    .query("pair == 'BFS46<->FSDM41'")["p_below_null"] < 0.05
+                ).sum()
+            ),
+            0,
+            "exp_tierc_cross_source_transfer.csv",
+            "One-sided empirical label-permutation tests within each backbone and direction.",
+            "Count of significant below-null cells for the primary source pair.",
+            "14 backbone--direction cells",
+        ),
+        (
+            "tierc_distributional_drift_r_ci_low",
+            lambda: _single_value(
+                "exp_tierc_cross_source_summary.csv",
+                "crosssource_drift_drop_r_ci_low",
+            ),
+            3,
+            "exp_tierc_cross_source_summary.csv",
+            "Record-bootstrap interval over Tier-C species--direction--backbone cells.",
+            "Uncertainty for the qualitative Tier-C drift/drop direction.",
+            "$[0.264,0.395]$",
+        ),
+        (
+            "tierc_distributional_drift_r_ci_high",
+            lambda: _single_value(
+                "exp_tierc_cross_source_summary.csv",
+                "crosssource_drift_drop_r_ci_high",
+            ),
+            3,
+            "exp_tierc_cross_source_summary.csv",
+            "Record-bootstrap interval over Tier-C species--direction--backbone cells.",
+            "Uncertainty for the qualitative Tier-C drift/drop direction.",
+            "$[0.264,0.395]$",
+        ),
+        (
+            "tierd_distributional_drift_r_ci_low",
+            lambda: _single_value(
+                "exp5_crossmag_asymmetry_summary.csv",
+                "crossmag_drift_drop_r_ci_low",
+            ),
+            3,
+            "exp5_crossmag_asymmetry_summary.csv",
+            "Record-bootstrap interval over Tier-D directed backbone--magnification cells.",
+            "Uncertainty for the VN26 cross-magnification drift/drop association.",
+            "$[0.381,0.748]$",
+        ),
+        (
+            "tierd_distributional_drift_r_ci_high",
+            lambda: _single_value(
+                "exp5_crossmag_asymmetry_summary.csv",
+                "crossmag_drift_drop_r_ci_high",
+            ),
+            3,
+            "exp5_crossmag_asymmetry_summary.csv",
+            "Record-bootstrap interval over Tier-D directed backbone--magnification cells.",
+            "Uncertainty for the VN26 cross-magnification drift/drop association.",
+            "$[0.381,0.748]$",
         ),
         (
             "condition_level_paired_drift_auc",
@@ -358,13 +518,27 @@ def _metric_specs() -> list[tuple[str, Callable[[], float], int, str, str, str, 
 METRIC_CLASSIFICATION = {
     "drift_raw_same_space": ("drift_drop_association", "upper_bound"),
     "drift_partial_perturbation_identity": ("drift_drop_association", "sensitivity"),
-    "drift_partial_metadata_severity": ("drift_drop_association", "primary"),
+    "drift_partial_metadata_severity_full_record": ("drift_drop_association", "primary"),
+    "drift_partial_metadata_severity_complete_case": ("drift_drop_association", "spatial_cam_subset"),
     "drift_incremental_r2": ("drift_drop_association", "primary"),
     "cross_space_partial_r": ("drift_drop_association", "transfer_control"),
+    "cross_space_partial_r_ci_low": ("drift_drop_association", "transfer_control_uncertainty"),
+    "cross_space_partial_r_ci_high": ("drift_drop_association", "transfer_control_uncertainty"),
+    "non_patch_wrd25_partial_r": ("drift_drop_association", "leakage_sensitivity"),
+    "non_patch_wrd25_delta_r2": ("drift_drop_association", "leakage_sensitivity"),
+    "crossmag_nonmonotone_difference": ("cross_magnification", "nonmonotonicity"),
+    "crossmag_nonmonotone_ci_low": ("cross_magnification", "nonmonotonicity_uncertainty"),
+    "crossmag_nonmonotone_ci_high": ("cross_magnification", "nonmonotonicity_uncertainty"),
     "tierc_bfs_fsdm_heldout_species_source_acc": ("source_species_dissociation", "primary"),
     "tierc_dtsr_woodauth_heldout_species_source_acc": ("source_species_dissociation", "secondary_pair"),
     "tierc_bfs_fsdm_cross_source_species_acc": ("source_species_dissociation", "primary"),
     "tierc_dtsr_woodauth_cross_source_species_acc": ("source_species_dissociation", "secondary_pair"),
+    "tierc_bfs_fsdm_null_max_p": ("source_species_dissociation", "permutation_null"),
+    "tierc_bfs_fsdm_cells_below_null": ("source_species_dissociation", "permutation_null"),
+    "tierc_distributional_drift_r_ci_low": ("real_shift_drift_drop", "uncertainty"),
+    "tierc_distributional_drift_r_ci_high": ("real_shift_drift_drop", "uncertainty"),
+    "tierd_distributional_drift_r_ci_low": ("real_shift_drift_drop", "uncertainty"),
+    "tierd_distributional_drift_r_ci_high": ("real_shift_drift_drop", "uncertainty"),
     "condition_level_paired_drift_auc": ("failure_detection_auc", "diagnostic_oracle"),
     "batch_level_paired_drift_auc": ("failure_detection_auc", "batch_oracle"),
     "batch_level_mmd_auc": ("failure_detection_auc", "primary_monitor"),
@@ -386,8 +560,8 @@ FIGURE_SOURCES: dict[str, tuple[str, ...]] = {
     "fig2b_severity_curves.png": ("exp1_accuracy_matrix.csv", "exp1_bootstrap_ci.csv"),
     "fig3_feature_geometry_failure.png": (
         "exp1b_feature_geometry.csv",
-        "exp7_partial_correlations_severity.csv",
-        "exp7_controlled_hierarchical_r2.csv",
+        "exp7_full_record_partial_correlation.csv",
+        "exp7_full_record_primary_r2.csv",
     ),
     "fig5_nemenyi_cd_diagram.png": ("exp1_nemenyi_pvalues.csv",),
     "fig8_roc_failure_detection.png": ("exp8_detector_auc.csv", "exp8_operating_points.csv"),
@@ -399,6 +573,7 @@ FIGURE_SOURCES: dict[str, tuple[str, ...]] = {
     ),
     "cross_magnification_asymmetry.png": (
         "exp5_crossmag_asymmetry_by_pair.csv",
+        "exp5_crossmag_nonmonotonicity.csv",
         "exp5_crossmag_drift_drop.csv",
     ),
     "monitor_on_real_shift.png": (
@@ -527,15 +702,10 @@ def audit() -> tuple[list[AuditItem], list[MetricRecord]]:
     try:
         table = _read("exp6_multilevel_table.csv").copy()
         table["severity_control"] = table["severity"].astype(str)
-        full_numeric = [
-            "feature_drift", "delta_intra", "inter_collapse", "delta_fgcs",
-            "sgi_clean", "spatial_instability_hungarian",
-            "cam_shift_jsd", "cam_entropy_clean",
-        ]
         controls = [
             "dataset", "backbone", "perturbation", "severity_control"
         ]
-        common = table[["drop", *controls, *full_numeric]].replace(
+        common = table[["drop", *controls, "feature_drift"]].replace(
             [np.inf, -np.inf], np.nan
         ).dropna()
         X0 = _one_hot(common, controls)
@@ -549,19 +719,68 @@ def audit() -> tuple[list[AuditItem], list[MetricRecord]]:
         )
         actual = float(r2_1 - r2_0)
         saved = _row_value(
-            "exp7_controlled_hierarchical_r2.csv",
+            "exp7_full_record_primary_r2.csv",
             "delta_r2",
-            model="M1: + feature drift",
+            model="P1: + feature drift",
         )
         _check(
-            math.isclose(actual, saved, abs_tol=1e-12),
-            "formula:controlled_delta_r2",
-            f"recomputed complete-case Delta R2={actual:.12f}",
+            len(common) == 1596 and math.isclose(actual, saved, abs_tol=1e-12),
+            "formula:full_record_controlled_delta_r2",
+            f"recomputed full-record Delta R2={actual:.12f}, n={len(common)}",
             f"recomputed Delta R2={actual} differs from saved {saved}",
             results,
         )
     except Exception as exc:
-        results.append(AuditItem("FAIL", "formula:controlled_delta_r2", str(exc)))
+        results.append(AuditItem(
+            "FAIL", "formula:full_record_controlled_delta_r2", str(exc)
+        ))
+
+    try:
+        table = _read("exp6_multilevel_table.csv").copy()
+        table["severity_control"] = table["severity"].astype(str)
+        controls = ["dataset", "backbone", "perturbation", "severity_control"]
+        full_numeric = [
+            "feature_drift", "delta_intra", "inter_collapse", "delta_fgcs",
+            "sgi_clean", "spatial_instability_hungarian",
+            "cam_shift_jsd", "cam_entropy_clean",
+        ]
+        common = table[
+            ["drop", *controls, *full_numeric]
+        ].replace([np.inf, -np.inf], np.nan).dropna()
+        X = _one_hot(common, controls)
+        drift_residual = (
+            common["feature_drift"].to_numpy()
+            - LinearRegression().fit(
+                X, common["feature_drift"]
+            ).predict(X)
+        )
+        drop_residual = (
+            common["drop"].to_numpy()
+            - LinearRegression().fit(X, common["drop"]).predict(X)
+        )
+        actual = float(np.corrcoef(drift_residual, drop_residual)[0, 1])
+        saved = _row_value(
+            "exp7_complete_case_partial_correlation.csv",
+            "r_partial_complete_case",
+            metric="feature_drift",
+        )
+        saved_n = int(_row_value(
+            "exp7_complete_case_partial_correlation.csv",
+            "n",
+            metric="feature_drift",
+        ))
+        _check(
+            len(common) == saved_n == 630
+            and math.isclose(actual, saved, abs_tol=1e-12),
+            "formula:complete_case_partial_correlation",
+            f"recomputed complete-case partial r={actual:.12f}, n={len(common)}",
+            f"complete-case partial mismatch: recomputed={actual}, saved={saved}, n={saved_n}",
+            results,
+        )
+    except Exception as exc:
+        results.append(AuditItem(
+            "FAIL", "formula:complete_case_partial_correlation", str(exc)
+        ))
 
     try:
         terms = _read("exp_mmd_confound_terms.csv")
@@ -593,6 +812,63 @@ def audit() -> tuple[list[AuditItem], list[MetricRecord]]:
             )
     except Exception as exc:
         results.append(AuditItem("FAIL", "formula:heldout_source_probe", str(exc)))
+
+    try:
+        transfer = _read("exp_tierc_cross_source_transfer.csv")
+        primary = transfer[transfer["pair"].eq("BFS46<->FSDM41")]
+        observed_below_interval = (
+            primary["cross_source_accuracy"] < primary["null_ci_low"]
+        )
+        _check(
+            len(primary) == 14
+            and int((primary["p_below_null"] < 0.05).sum()) == 14
+            and float(primary["p_below_null"].max()) <= 0.0003 + 1e-12
+            and bool(observed_below_interval.all()),
+            "formula:tierc_permutation_null",
+            "all 14 BFS46/FSDM41 cells are below their permutation-null intervals; max p=0.0003",
+            "Tier-C permutation-null claim is not reproduced by transfer records",
+            results,
+        )
+    except Exception as exc:
+        results.append(AuditItem(
+            "FAIL", "formula:tierc_permutation_null", str(exc)
+        ))
+
+    try:
+        manifest = _read("backbone_pretrained_manifest.csv")
+        observed = {
+            str(row.backbone): (
+                str(row.timm_model_id),
+                str(row.pretrained_tag),
+            )
+            for row in manifest.itertuples(index=False)
+        }
+        expected = {
+            "resnet50": ("resnet50", "a1_in1k"),
+            "efficientnet_b3": ("efficientnet_b3", "ra2_in1k"),
+            "convnext_tiny": ("convnext_tiny", "in12k_ft_in1k"),
+            "swin_tiny": (
+                "swin_tiny_patch4_window7_224",
+                "ms_in1k",
+            ),
+            "dinov2_b": (
+                "vit_base_patch14_dinov2.lvd142m",
+                "lvd142m",
+            ),
+            "hrnet32": ("hrnet_w32", "ms_in1k"),
+            "mobilenetv3": ("mobilenetv3_large_100", "ra_in1k"),
+        }
+        _check(
+            observed == expected,
+            "formula:backbone_pretrained_manifest",
+            "all seven timm model identifiers and pretrained tags match the paper configuration",
+            f"backbone manifest mismatch: observed={observed}",
+            results,
+        )
+    except Exception as exc:
+        results.append(AuditItem(
+            "FAIL", "formula:backbone_pretrained_manifest", str(exc)
+        ))
 
     try:
         scores = _read("exp_monitor_on_real_shift_scores.csv")

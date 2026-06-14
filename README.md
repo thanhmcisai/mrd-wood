@@ -28,18 +28,22 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 ## Main Findings
 
-- After controlling for dataset, backbone, perturbation family, and severity,
-  feature drift retains a positive association with accuracy drop
-  (`partial r = 0.623`, `Delta R2 = 0.032`).
+- Over all 1,596 Tier-A records, feature drift retains a positive association
+  with accuracy drop after dataset, backbone, perturbation-family, and severity
+  controls (`partial r = 0.623`, `Delta R2 = 0.048`). The fixed 630-record
+  spatial/CAM subset gives `partial r = 0.552` and `Delta R2 = 0.032` as a
+  secondary diagnostic analysis.
 - The transferable cross-space component is smaller (`partial r = 0.178`);
   pooled same-space `r = 0.908` is treated as an upper-bound association.
 - A balanced leave-one-species-out probe recovers acquisition source at
   `0.923/0.940` accuracy (binary chance `0.5`), while cross-source species
-  recognition is below or near task-specific chance (`0.014` vs `1/24`;
-  `0.278` vs `1/4`). This exposes a class-conditional gap within a
+  recognition is below or near its nominal uniform-class reference (`0.014`
+  vs `1/24`; `0.278` vs `1/4`). This exposes a class-conditional gap within a
   source-sensitive marginal representation.
 - Shared-species transfer nearly collapses for BFS46/FSDM41
-  (`accuracy = 0.008-0.013`) and remains limited for DTSR14/WOODAUTH.
+  (`accuracy = 0.008-0.013`); all 14 backbone-direction cells are below their
+  label-permutation null (`p <= 0.0003`). DTSR14/WOODAUTH is mixed relative to
+  its null.
 - VN26 transfer is asymmetric and non-monotone across magnification pairs, with
   x50 as the main cross-scale failure locus.
 - A standard reference-bank RBF-MMD monitor reaches batch-level
@@ -162,6 +166,19 @@ python -u -m wood_spatial.experiments.exp_tierc_cross_source_shift \
   --check-only
 ```
 
+The real Tier-C run also computes a deterministic 10,000-permutation label null
+for every backbone and directed source pair. Export the exact pretrained
+configuration resolved by the pinned timm version with:
+
+```bash
+python3 scripts/export_backbone_manifest.py
+```
+
+The manifest records the environment used to resolve the model registry. The
+paper's reproducibility environment is pinned separately in
+`requirements.txt`; the model identifiers and pretrained tags must match even
+when the manifest is exported with a newer compatible timm release.
+
 The source-versus-species stage reports both balanced held-out-image accuracy
 and a stricter leave-one-species-out source probe; the latter is the manuscript
 protocol.
@@ -192,7 +209,7 @@ to `results/audit/paper_metric_registry.csv`. Outputs are moved to
 `results/archive/` only when they are verified to come from a superseded
 formula, configuration, cache, or protocol.
 
-The submission snapshot passes the strict paper audit with 106 checked claims
+The submission snapshot passes the strict paper audit with 123 checked claims
 and no warnings or failures.
 
 ## Manuscript

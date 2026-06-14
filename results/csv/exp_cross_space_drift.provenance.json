@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-06-14T06:06:07.137592+00:00",
+  "environment": {
+    "WOOD_BASE": "",
+    "WOOD_DATASETS_DIR": "",
+    "WOOD_RESULTS_DIR": "/home/thanh/Wood_Research_git/results"
+  },
+  "experiment": "exp_cross_space_drift",
+  "git_commit": "5f8511059626644822a02b3fe80944d49a67f3f2",
+  "inputs": [
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp1b_feature_geometry.csv",
+      "sha256": "ad6c6bc4cc592ca180843690e6cb8aad9913e0f9a53b01c73f822862cdbcd519"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp_cross_space_drift_matrix.csv",
+      "sha256": "f5835e6041edabf4e43fa5dce044b92bec4a66554186c67ba05ff9aa014e7056"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/csv/exp_cross_space_drift_summary.csv",
+      "sha256": "6127f7646434e84e3c72e7c77ca02785d1f354bba5d1c1204c6d9723f7795d36"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/figures/cross_space_drift.png",
+      "sha256": "73697d01536263cff6bb9326ce475117aea7f2adf4f5e95ec73101d2925fb9de"
+    },
+    {
+      "path": "/home/thanh/Wood_Research_git/results/figures/cross_space_drift.pdf",
+      "sha256": "e5bb195e6b63ad6b1c9da649d7354031e89db3d058078d1aa909604f892bc551"
+    }
+  ],
+  "parameters": {
+    "backbones": [
+      "resnet50",
+      "efficientnet_b3",
+      "convnext_tiny",
+      "swin_tiny",
+      "dinov2_b",
+      "hrnet32",
+      "mobilenetv3"
+    ],
+    "controls": [
+      "dataset",
+      "perturbation_family",
+      "severity"
+    ],
+    "partial_bootstrap_reps": 5000,
+    "partial_bootstrap_unit": "aligned_tier_a_condition"
+  },
+  "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31",
+  "protocol": "aligned_cross_space_tier_a_v1",
+  "python": "3.9.1",
+  "results_dir": "/home/thanh/Wood_Research_git/results"
+}

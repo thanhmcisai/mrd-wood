@@ -1,0 +1,3 @@
+model,r2,delta_r2,n
+P0: dataset+backbone+perturbation+severity,0.8755649539980135,0.8755649539980135,1596
+P1: + feature drift,0.9238462883253346,0.04828133432732107,1596

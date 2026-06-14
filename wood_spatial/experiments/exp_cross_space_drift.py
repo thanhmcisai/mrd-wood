@@ -42,6 +42,7 @@ Verify with `--demo`; wire load_drift_drop_matrices() to caches for `--real`.
 """
 import argparse
 import itertools
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -167,7 +168,80 @@ def _residualize(v, codes_list):
     return v - X @ beta
 
 
-def analyze(drift, drop, meta):
+def _cross_space_partial_r(drift, drop, meta, bbs, condition_idx=None):
+    """Partial r over stacked off-diagonal backbone pairs.
+
+    If condition_idx is provided, resample aligned Tier-A conditions and retain
+    all ordered off-diagonal backbone pairs for each sampled condition.
+    """
+    if condition_idx is None:
+        condition_idx = np.arange(len(next(iter(drift.values()))))
+    xs, ys = [], []
+    for i, a in enumerate(bbs):
+        for j, b in enumerate(bbs):
+            if i != j:
+                xs.append(drift[a][condition_idx])
+                ys.append(drop[b][condition_idx])
+    xs = np.concatenate(xs)
+    ys = np.concatenate(ys)
+    reps = len(bbs) * (len(bbs) - 1)
+    ds = np.tile(meta["dataset"][condition_idx], reps)
+    fam = np.tile(meta["family"][condition_idx], reps)
+    sev = np.tile(meta["severity"][condition_idx], reps)
+    xr = _residualize(xs, [ds, fam, sev])
+    yr = _residualize(ys, [ds, fam, sev])
+    return _pearson(xr, yr), len(condition_idx), len(xs)
+
+
+def _bootstrap_cross_space_partial_ci(
+    drift,
+    drop,
+    meta,
+    bbs,
+    *,
+    seed=42,
+    reps=5_000,
+):
+    """Condition-block bootstrap CI for the cross-space partial correlation.
+
+    The control regression is fit once on the full stacked off-diagonal design,
+    and bootstrap resamples aligned Tier-A conditions from the residual arrays.
+    This keeps the CI tied to the controlled estimand while avoiding thousands
+    of repeated least-squares fits on the same categorical design.
+    """
+    rng = np.random.default_rng(seed)
+    n_conditions = len(next(iter(drift.values())))
+    x_pairs, y_pairs = [], []
+    for i, a in enumerate(bbs):
+        for j, b in enumerate(bbs):
+            if i != j:
+                x_pairs.append(drift[a])
+                y_pairs.append(drop[b])
+    x_pairs = np.asarray(x_pairs, dtype=float)
+    y_pairs = np.asarray(y_pairs, dtype=float)
+    pair_count = x_pairs.shape[0]
+    ds = np.tile(meta["dataset"], pair_count)
+    fam = np.tile(meta["family"], pair_count)
+    sev = np.tile(meta["severity"], pair_count)
+    xr = _residualize(x_pairs.reshape(-1), [ds, fam, sev]).reshape(
+        pair_count, n_conditions
+    )
+    yr = _residualize(y_pairs.reshape(-1), [ds, fam, sev]).reshape(
+        pair_count, n_conditions
+    )
+    vals = []
+    for _ in range(reps):
+        idx = rng.integers(0, n_conditions, n_conditions)
+        r = _pearson(xr[:, idx].reshape(-1), yr[:, idx].reshape(-1))
+        if np.isfinite(r):
+            vals.append(r)
+    if not vals:
+        return np.nan, np.nan, 0
+    lo, hi = np.quantile(vals, [0.025, 0.975])
+    return float(lo), float(hi), int(len(vals))
+
+
+def analyze(drift, drop, meta, bootstrap_reps=5_000):
     bbs = [b for b in BACKBONES if b in drift]
     n = len(bbs)
     M = np.full((n, n), np.nan)  # M[i,j] = r( drift_i , drop_j )
@@ -188,15 +262,13 @@ def analyze(drift, drop, meta):
     pooled_r = _pearson(xs, ys)
     pooled_rho = _spearman(xs, ys)
 
-    # partial correlation pooled off-diagonal, controlling dataset/family/severity
-    # (tile meta across the stacked pairs)
-    reps = n * (n - 1)
-    ds = np.tile(meta["dataset"], reps)
-    fam = np.tile(meta["family"], reps)
-    sev = np.tile(meta["severity"], reps)
-    xr = _residualize(xs, [ds, fam, sev])
-    yr = _residualize(ys, [ds, fam, sev])
-    partial_r = _pearson(xr, yr)
+    # Partial correlation pooled off-diagonal, controlling dataset/family/severity.
+    # CI uses a condition-block bootstrap: aligned Tier-A conditions are resampled,
+    # and all ordered off-diagonal backbone pairs for the sampled condition are kept.
+    partial_r, n_conditions, n_stacked = _cross_space_partial_r(drift, drop, meta, bbs)
+    ci_low, ci_high, ci_reps = _bootstrap_cross_space_partial_ci(
+        drift, drop, meta, bbs, reps=bootstrap_reps
+    )
 
     return {
         "backbones": bbs,
@@ -208,6 +280,12 @@ def analyze(drift, drop, meta):
         "pooled_cross_space_r": pooled_r,
         "pooled_cross_space_rho": pooled_rho,
         "pooled_cross_space_partial_r": partial_r,
+        "pooled_cross_space_partial_r_ci_low": ci_low,
+        "pooled_cross_space_partial_r_ci_high": ci_high,
+        "partial_bootstrap_reps": ci_reps,
+        "partial_bootstrap_seed": 42,
+        "n_conditions": n_conditions,
+        "n_stacked_offdiag_records": n_stacked,
     }
 
 
@@ -227,6 +305,12 @@ def print_summary(out):
     print(f"  pooled cross-space Pearson r            = {out['pooled_cross_space_r']:.3f}")
     print(f"  pooled cross-space Spearman rho         = {out['pooled_cross_space_rho']:.3f}")
     print(f"  pooled cross-space PARTIAL r            = {out['pooled_cross_space_partial_r']:.3f}")
+    if "pooled_cross_space_partial_r_ci_low" in out:
+        print(
+            "     condition-bootstrap 95% CI           = "
+            f"[{out['pooled_cross_space_partial_r_ci_low']:.3f}, "
+            f"{out['pooled_cross_space_partial_r_ci_high']:.3f}]"
+        )
     print("     (controls: dataset, perturbation family, severity)")
     print("\n  Reading: the controlled cross-space component is positive but modest.")
     print("  A small diagnostic core transfers across spaces, while most of the")
@@ -311,6 +395,7 @@ def main():
     )
     ap.add_argument("--fig", default="cross_space_drift.png")
     ap.add_argument("--no-fig", action="store_true")
+    ap.add_argument("--bootstrap-reps", type=int, default=5_000)
     args = ap.parse_args()
     if args.from_csv:
         out = load_saved_outputs()
@@ -321,7 +406,7 @@ def main():
             print("[no mode given] defaulting to --demo\n")
         drift, drop, meta = make_demo()
     if not args.from_csv:
-        out = analyze(drift, drop, meta)
+        out = analyze(drift, drop, meta, bootstrap_reps=args.bootstrap_reps)
     print_summary(out)
     if not args.no_fig:
         fig = args.fig
@@ -356,6 +441,8 @@ def main():
             parameters={
                 "controls": ["dataset", "perturbation_family", "severity"],
                 "backbones": BACKBONES,
+                "partial_bootstrap_unit": "aligned_tier_a_condition",
+                "partial_bootstrap_reps": args.bootstrap_reps,
             },
             inputs=[require_csv("exp1b_feature_geometry.csv")],
         )

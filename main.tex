@@ -10,7 +10,6 @@
 \usepackage{flafter}
 \usepackage{xcolor}
 \graphicspath{{./}{els-cas-templates/}}
-\newtheorem{corollary}{Corollary}
 
 % Keep figures and tables close to their first citation in the manuscript.
 % This also protects the Overleaf build if a template copy loads endfloat.
@@ -62,40 +61,34 @@
 
 \begin{abstract}
 Computer-vision wood identification models can be accurate under controlled
-acquisition but unreliable when acquisition changes. MRD-Wood is an empirical
-diagnostic protocol for frozen pretrained representations, not a new classifier
-or drift detector. Across seven backbones and nine public dataset sources, we
-evaluate controlled perturbations, external-source generalization, real
-cross-source transfer, and cross-magnification transfer. After controlling for
-dataset, backbone, perturbation family, and severity, feature drift retains a
-modest association with accuracy drop (partial $r=0.623$,
-$\Delta R^2=0.032$); a smaller component transfers across feature spaces
-($r=0.178$). The pooled same-space correlation ($r=0.908$) is therefore treated
-as an upper bound shaped by severity and same-space coupling. A balanced
-leave-one-species-out probe further shows that acquisition source is recoverable
-from frozen features even for held-out species, whereas cross-source species
-identity transfers poorly. The domain-specific consequences are severe:
-shared-species transfer nearly collapses for
-BFS46$\leftrightarrow$FSDM41 (mean accuracy 0.008--0.013), and VN26 exhibits
-asymmetric, non-monotone transfer across magnifications, with x50 as the main
-failure locus. A reference-bank RBF-MMD monitor reaches batch-level ROC-AUC
-0.968 and F1 0.909 over 4,256 synthetic-shift monitoring records and flags
-60/70 real-shift batches without
-target labels. However, its severity ordering remains non-monotone under shared
-kernel bandwidths and is sensitive to reference-bank class composition, so it
-is an acquisition-mismatch alarm rather than a calibrated accuracy-loss
-estimator. These results locate part of the
-acquisition-shift gap in source-sensitive representation geometry and motivate
-species-conditional source invariance across acquisition protocols and optical
-scales.
+acquisition but unreliable when acquisition changes. Across seven backbones and
+nine public dataset sources, MRD-Wood evaluates controlled perturbations,
+external-source generalization, real cross-source transfer, and
+cross-magnification transfer as an empirical diagnostic protocol for frozen
+pretrained representations, not a novel classifier or detector. The principal
+domain-specific finding is asymmetric, non-monotone VN26 transfer, with x50 as
+the locus of cross-scale incompatibility; shared-species transfer also nearly
+collapses for BFS46$\leftrightarrow$FSDM41 (mean accuracy 0.008--0.013), with
+all 14 backbone--direction cells below their label-permutation null
+($p\leq0.0003$). Acquisition source nevertheless remains recoverable from
+frozen features for held-out species, indicating source-sensitive,
+class-conditionally misaligned geometry. Over all 1,596 Tier-A records, feature
+drift retains a modest association with accuracy drop after dataset, backbone,
+perturbation-family, and severity controls (partial $r=0.623$,
+$\Delta R^2=0.048$), but only a smaller component transfers across feature
+spaces ($r=0.178$). A reference-bank RBF-MMD alarm
+reaches batch-level ROC-AUC 0.968 and F1 0.909 over 4,256 synthetic-shift records
+and flags 60/70 real-shift batches without target labels. Its magnitude is not a
+calibrated severity scale and depends on reference-bank class composition. These
+results motivate species-conditional source invariance across acquisition
+protocols and optical scales.
 \end{abstract}
 
 \begin{highlights}
 \item Multi-dataset benchmark tests wood recognition under acquisition shifts.
 \item Controlled drift retains a modest signal beyond shift severity.
 \item Source identity transfers across species while species geometry does not.
-\item Cross-source transfer collapses and magnification transfer is asymmetric.
-\item Reference-bank alarms detect acquisition mismatch without target labels.
+\item Real-shift boundaries and label-free alarms expose acquisition mismatch.
 \end{highlights}
 
 \begin{keywords}
@@ -152,7 +145,7 @@ The main contributions are:
   \item \textbf{A controlled, class-conditional diagnosis of the acquisition-shift
   gap.} Paired, grouped, and cross-space analyses separate severity-linked,
   same-space, and transferable drift components. The source-versus-species
-  probe, below-chance cross-source transfer, and kernel decomposition further
+  probe, very low cross-source transfer, and kernel decomposition further
   show that marginal acquisition structure can persist while
   species-conditional geometry is misaligned.
   \item \textbf{A direct cross-source transfer boundary.} Shared-species
@@ -175,6 +168,7 @@ optical scales. The monitor provides an early-warning mechanism, while the two
 real-shift findings identify the target of a future species-conditional
 source-invariant objective.
 \section{Related Work}
+\label{sec:related}
 
 \subsection{Wood species recognition and acquisition sensitivity}
 
@@ -190,6 +184,12 @@ and VN26 further show that recognition can be highly accurate under controlled
 acquisition while remaining sensitive to surface preparation, anatomical
 section, optical scale, and image resolution
 \citep{canosaenz2022tropical,barmpoutis2018woodauth,herrera2026goimai,nguyentrong2023magnification}.
+The earlier VN26 study established that recognition accuracy depends on
+magnification. The present work instead measures directed transfer, signed
+asymmetry with backbone-level uncertainty, non-monotone scale behaviour, and
+the representation drift associated with the x50 transfer boundary. This
+distinction separates acquisition sensitivity from the direction-dependent
+representation failure studied here.
 Multi-xylarium evaluation has also trained WoodID models on specimens from
 several collections and tested them on a held-out collection
 \citep{ravindran2022multixylarium}. That protocol establishes the importance of
@@ -269,33 +269,8 @@ cross-source boundary. The monitor instantiates
 established distance and two-sample methods and evaluates their validity under
 WoodID acquisition shifts. Comparative detector benchmarking remains outside
 this domain-diagnostic scope.
-Table~\ref{tab:positioning} summarizes this scope.
-
-\begin{table}[pos=htbp]
-\centering
-\caption{Positioning of MRD-Wood relative to representative WoodID, robustness,
-and representation-monitoring studies. A check mark denotes an explicit
-evaluation component; ``partial'' denotes a limited treatment. The alarm column
-records whether label-free monitoring is evaluated.}
-\label{tab:positioning}
-\scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\begin{tabular}{p{0.24\linewidth}cccccc}
-\toprule
-Study & Multi-source & Stress test & Repr. diagnosis & Cross-source & Cross-mag. & Alarm \\
-\midrule
-\citet{paulafilho2014forest}, \citet{souza2020brazilian} & -- & -- & -- & -- & -- & -- \\
-\citet{sun2021smallwood}, \citet{fabijanska2021woodcore} & -- & -- & -- & -- & -- & -- \\
-\citet{herrera2026goimai} & -- & -- & -- & -- & -- & -- \\
-\citet{ravindran2021field}, \citet{ravindran2022caveat} & partial & partial & -- & -- & -- & -- \\
-\citet{ravindran2022multixylarium} & \checkmark & -- & -- & partial & -- & -- \\
-\citet{nguyentrong2023magnification} & -- & partial & -- & -- & \checkmark & -- \\
-\citet{owens2025robustness} & -- & \checkmark & -- & -- & -- & -- \\
-\citet{greco2024driftlens,tziouvaras2025alert,nguyen2025d3m} & partial & -- & \checkmark & -- & -- & \checkmark \\
-MRD-Wood & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
-\bottomrule
-\end{tabular}
-\end{table}
+A compact positioning matrix is provided in Supplementary
+Table~\ref{tab:positioning}.
 
 \section{MRD-Wood: Diagnosing Source-Sensitive Representation Geometry}
 
@@ -311,7 +286,12 @@ secondary views of internal organization, not as primary evidence.
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=0.75\linewidth]{results/figures/mrd_wood_overview_figure1.png}
-\caption{Overview of MRD-Wood (Mapping Representation Drift). Frozen pretrained backbones are evaluated under synthetic and real acquisition shifts. Representation drift quantifies the acquisition-shift gap and localizes part of it in the model itself, which manifests as two WoodID-specific boundaries---real cross-source collapse and cross-magnification asymmetry---and supports a derived label-free detection signal.}
+\caption{Overview of MRD-Wood (Mapping Representation Drift). Frozen pretrained
+backbones are evaluated under synthetic and real acquisition shifts.
+Representation drift diagnoses source-sensitive species geometry, whose
+WoodID-specific consequences include real cross-source collapse and
+cross-magnification asymmetry, and supports a derived label-free mismatch
+alarm.}
 \label{fig:mrd_framework}
 \end{figure}
 
@@ -326,33 +306,9 @@ The decision-level degradation is measured by the accuracy drop
 \end{equation}
 where $A_0$ and $A_\delta$ are the clean and shifted accuracies.
 
-Table~\ref{tab:symbols} summarizes the main symbols used throughout the
-diagnostic protocol; statistical conventions are detailed in
+Supplementary Table~\ref{tab:symbols} summarizes the main notation used
+throughout the diagnostic protocol; statistical conventions are detailed in
 Section~\ref{sec:quant_protocol}.
-
-\begin{table}[pos=htbp]
-\centering
-\caption{Main notation used by MRD-Wood.}
-\label{tab:symbols}
-\small
-\begin{tabular}{p{0.18\linewidth}p{0.72\linewidth}}
-\toprule
-Symbol & Meaning \\
-\midrule
-$\hat z$ & Global $L_2$-normalized feature vector extracted by a frozen backbone. \\
-$\Delta A$ & Accuracy drop from clean to shifted evaluation. \\
-$\Delta_f$ & Paired feature drift between a clean image and its shifted counterpart. \\
-$\Delta_{\mathrm{dist}}$ & Distributional feature drift between unpaired source and target batches. \\
-$d_{\mathrm{intra}}, d_{\mathrm{inter}}$ & Intra-class compactness and inter-class centroid separation. \\
-$FGCS, FSR$ & Feature-geometry collapse score and feature-space separability ratio. \\
-$SGI$ & Spatial granularity index of the clustered token map. \\
-$CSI, CSI_H$ & Spatial-cluster stability index and Hungarian-matched variant. \\
-$H(p), JSD$ & CAM-proxy concentration and clean-to-shift redistribution. \\
-$B_0, B_t$ & Clean reference bank and incoming evaluation batch. \\
-$r, \rho$ & Pearson and Spearman correlations. \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \subsection{Paired and distributional drift}
 \label{sec:global_drift}
@@ -448,7 +404,7 @@ centroid-similarity CAM proxy. Their full definitions, ablations, and qualitativ
 panels are provided in Supplementary Section~\ref{app:spatial_cam}.
 
 \subsection{Derived reference-bank mismatch alarm}
-\label{sec:refbank}
+\label{sec:refbank_method}
 
 The paired diagnostic is unavailable for an incoming batch because no clean
 version of the same sample is observed. The derived alarm therefore replaces
@@ -489,7 +445,7 @@ discrepancy between $B_0=\{a_i\}_{i=1}^{n}$ and $B_t=\{b_j\}_{j=1}^{m}$,
   \widehat{MMD}^2(B_0,B_t)=
   \frac{1}{n^2}\sum_{i,j} k(a_i,a_j)
   +\frac{1}{m^2}\sum_{i,j} k(b_i,b_j)
-  -\frac{2}{nm}\sum_{i,j} k(a_i,b_j),
+  -\frac{2}{nm}\sum_{i,j} k(a_i,b_j).
 \end{equation}
 This is the biased empirical estimator, including diagonal kernel terms.
 Here $k(a,b)=\exp(-\gamma\|a-b\|_2^2)$ and $\gamma$ is set by a median-distance
@@ -523,13 +479,14 @@ Paired drift and recognition error are coupled through decision geometry, but
 they are not the same quantity. For unit-normalized features,
 $\|\hat z'-\hat z\|_2=\sqrt{2\Delta_f}$, so cosine drift is exactly a spherical
 displacement. Consider the cosine nearest-centroid rule with normalized class
-prototypes $p_c$. For a correctly classified clean sample, define
+prototypes $p_c$. For a correctly classified clean sample, Eq.~\eqref{eq:margin}
+defines the clean margin
 \begin{equation}
   \Gamma(x)=\langle \hat z,p_y\rangle-\max_{c\neq y}\langle \hat z,p_c\rangle>0 .
   \label{eq:margin}
 \end{equation}
-Because the margin is $2$-Lipschitz, the shifted prediction is guaranteed to be
-preserved when
+Because the margin is $2$-Lipschitz, Eq.~\eqref{eq:preserve} gives a sufficient
+condition under which the shifted prediction is guaranteed to be preserved:
 \begin{equation}
   \Delta_f(x) < \frac{\Gamma(x)^2}{8},
   \label{eq:preserve}
@@ -539,12 +496,13 @@ and therefore a previously correct sample can fail only if
   \Delta_f(x)\ \ge\ \frac{\Gamma(x)^2}{8}.
   \label{eq:necessary}
 \end{equation}
-This gate explains both the association and its limits. A large displacement can
-remain harmless in a wide-margin region, whereas a small displacement can cause
-failure near a boundary. Equation~\eqref{eq:necessary} formalizes the
-distinction between continuous drift and discrete error: failure requires
-crossing a sample-specific margin. Analogous local-margin statements hold for
-linear and kNN rules. All observed prototype flips satisfy the necessary
+Together, Eqs.~\eqref{eq:margin}--\eqref{eq:necessary} explain both the
+association and its limits. A large displacement can remain harmless in a
+wide-margin region, whereas a small displacement can cause failure near a
+boundary. Equation~\eqref{eq:necessary} formalizes the distinction between
+continuous drift and discrete error: failure requires crossing a
+sample-specific margin. Analogous local-margin statements hold for linear and
+kNN rules. All observed prototype flips satisfy the necessary
 condition, while its conservative safe region certifies only about 0.3\% of
 records. Adding the direction of motion
 improves sample-level flip ROC-AUC by only 0.005 (0.847 versus 0.842), so the margin account is
@@ -623,6 +581,7 @@ Surface/compound & Scratch severity $\{\text{mild},\text{moderate},\text{severe}
 \end{table}
 
 \subsection{Frozen-feature recognition protocol}
+\label{sec:protocol}
 
 All reported accuracies are computed on frozen feature extractors rather than on fine-tuned WoodID classifiers. For each backbone, the classifier head is removed, global pooled features are L2-normalized, and a cosine 5-nearest-neighbor decision rule is used. Clean accuracy is estimated with five stratified shuffle splits using an 80/20 train/test split within each dataset. The split is stratified at the image-file level because specimen-level metadata are not consistently available across all public datasets; therefore, clean accuracy is interpreted as a representation-separability benchmark rather than as a specimen-disjoint deployment estimate. Perturbation accuracy uses a paired gallery--query stability protocol: clean features form the labeled gallery and the corresponding perturbed features form the query set. This protocol deliberately asks whether a shifted image remains compatible with the clean feature distribution of the same acquisition set; it should therefore be interpreted as a representation-stability benchmark rather than as field generalization across specimens. Because clean features form the gallery and the perturbed features of the same images form the query in the same embedding space, accuracy drop and feature drift share part of their mechanism; Section~\ref{sec:results_drift} therefore separates the relationship from this coupling using a frozen linear probe and the margin account of Section~\ref{sec:analytical}. To reduce dependence on one decision rule, Appendix~\ref{app:additional_checks} reports kNN sensitivity, nearest-centroid classification, and a frozen linear-probe check.
 
@@ -676,7 +635,7 @@ Secondary diagnostics & Inspect internal spatial organization without elevating 
 \end{tabular}
 \end{table}
 
-Quantitative experiments use the standard cached-feature protocol. Images are resized to the input resolution specified by each pretrained backbone configuration (EfficientNet-B3 uses 300$\times$300; the other backbones use 224$\times$224) and normalized with ImageNet statistics. Global features are extracted from timm pretrained models with the classifier removed and L2-normalized after pooling. Spatial features use timm \texttt{features\_only} with \texttt{out\_indices=(2,)} for CNN/HRNet/Swin backbones, while DINOv2-B uses intermediate ViT tokens from block 6. Spatial clustering uses $K=3$, L2-normalized spatial tokens, KMeans with ten initializations, and no PCA. This choice keeps the spatial metrics consistent with the features used in the accuracy and drift analyses. Cluster labels are brightness-ordered only for visualization. Quantitative cluster comparison uses Hungarian matching to reduce permutation ambiguity. SGI is interpreted only as a relative comparison at fixed $K$ because the $K$ ablation in Appendix~\ref{app:spatial_cam} shows that SGI rises monotonically as the number of clusters increases. The CAM-proxy analysis uses the centroid activation map defined in Supplementary Section~\ref{app:spatial_cam}. High-resolution VN26 figures are used only for qualitative visualization of spatial clusters and CAM-proxy overlays; they are not used as the main quantitative protocol. The robustness protocol uses five stratified shuffle splits and the global random seed is 42. The implementation requires PyTorch, torchvision, timm, scikit-learn, scipy, statsmodels-compatible mixed-effects tooling, pandas, NumPy, OpenCV, Pillow, and scikit-image; feature caches were generated on GPU-enabled hardware using the same seed and library stack for the full run.
+Quantitative experiments use the standard cached-feature protocol. Images are resized to the input resolution specified by each pretrained backbone configuration (EfficientNet-B3 uses 300$\times$300; the other backbones use 224$\times$224) and normalized with ImageNet statistics. Global features are extracted from timm pretrained models with the classifier removed and L2-normalized after pooling. The reproducibility environment pins \texttt{timm==0.9.12}; Supplementary Table~\ref{tab:backbone_manifest} records the exact timm model identifiers and pretrained-weight tags, while the released manifest records the resolver environment in which it was generated. Spatial features use timm \texttt{features\_only} with \texttt{out\_indices=(2,)} for CNN/HRNet/Swin backbones, while DINOv2-B uses intermediate ViT tokens from block 6. Spatial clustering uses $K=3$, L2-normalized spatial tokens, KMeans with ten initializations, and no PCA. This choice keeps the spatial metrics consistent with the features used in the accuracy and drift analyses. Cluster labels are brightness-ordered only for visualization. Quantitative cluster comparison uses Hungarian matching to reduce permutation ambiguity. SGI is interpreted only as a relative comparison at fixed $K$ because the $K$ ablation in Appendix~\ref{app:spatial_cam} shows that SGI rises monotonically as the number of clusters increases. The CAM-proxy analysis uses the centroid activation map defined in Supplementary Section~\ref{app:spatial_cam}. High-resolution VN26 figures are used only for qualitative visualization of spatial clusters and CAM-proxy overlays; they are not used as the main quantitative protocol. The robustness protocol uses five stratified shuffle splits and the global random seed is 42. The implementation requires PyTorch, torchvision, timm, scikit-learn, scipy, statsmodels-compatible mixed-effects tooling, pandas, NumPy, OpenCV, Pillow, and scikit-image; feature caches were generated on GPU-enabled hardware using the same seed and library stack for the full run.
 
 We use bootstrap confidence intervals \citep{efron1979bootstrap}, Wilcoxon/Nemenyi ranking following common classifier-comparison practice \citep{demsar2006statistical}, Kendall's $W$, Pearson and Spearman correlations, partial correlations, hierarchical regression, and \texttt{statsmodels} mixed-effects models \citep{laird1982random,seabold2010statsmodels}. These statistics serve distinct roles. Pearson $r$ measures the strength of a linear association and Spearman $\rho$ a monotonic (rank) association; reporting both guards against a result driven by a few outliers or by nonlinearity. Partial correlation reports $r$ after residualizing shared factors, with the main robustness check adding severity to dataset, backbone, and perturbation-family controls. $R^2$ is the fraction of accuracy-drop variance explained by a regression model, and $\Delta R^2$ is the incremental variance a block adds. The Friedman test ($\chi^2$) checks whether backbones have systematically different robustness ranks across conditions; Kendall's $W$ reports how concordant those ranks are ($0$ = no agreement, $1$ = identical rankings). The Nemenyi critical-difference (CD) analysis identifies which mean ranks differ significantly: backbones connected by a bar are \emph{not} significantly different. Maximum mean discrepancy (MMD) is a kernel two-sample statistic that is large when two feature distributions differ. Mixed-effects coefficients ($\beta$) estimate the drift effect while modelling grouped (non-independent) records. The Nemenyi critical-difference analysis controls family-wise comparison for the backbone-ranking post-hoc test; other reported $p$-values are interpreted alongside effect sizes, confidence intervals, and grouped robustness checks rather than as a single decision threshold. Because backbone--dataset--perturbation records are grouped rather than fully independent, the main correlation is also checked by backbone, dataset, perturbation family, perturbation severity, leave-one-dataset-out validation, mixed-effects controls, and clustered bootstrap over dataset--backbone--perturbation groups. Detector performance is evaluated with ROC-AUC, average precision, and best F1, with additional batch-size, reference-bank-size, leave-one-dataset-out, and leave-one-perturbation-family-out checks.
 
@@ -695,6 +654,8 @@ physical specimen because specimen-level identifiers are not consistently
 available. Absolute accuracy and $\Delta A$ are therefore
 representation-separability benchmarks rather than specimen-disjoint field
 estimates. Spatial and CAM-proxy analyses remain secondary diagnostics.
+Supporting tables and diagnostic figures moved out of the main text are
+collected in Supplementary Section~\ref{app:main_supporting}.
 
 \subsection{The gap exists: clean accuracy does not determine robustness}
 \label{sec:perturbation_results}
@@ -734,66 +695,74 @@ ResNet-50 & 0.935 & 0.638 & 0.297 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:perturbation} shows the perturbation hierarchy. Figure~\ref{fig:acc_heatmap} groups variants into families (e.g., Blur, RGB Channel Shift, Noise, Digital, Photometric, Surface Artifact, and Compound), whereas Table~\ref{tab:perturbation} lists representative variant-level conditions such as Gaussian blur, defocus blur, channel shifts, JPEG, pixelation, and compound presets. Compound perturbations and blur-like degradations are most destructive, whereas the evaluated RGB channel shifts and global photometric changes do not consistently reduce accuracy in the averaged Tier-A setting. Blue-channel shift is the clearest contrast with \citet{owens2025robustness}: it has mean drop $-0.009$ here, while Owens et al. found blue-channel changes harmful in their Peruvian WoodID setting. The difference may arise from the transform definition and magnitude, frozen pretrained features rather than a task-trained WoodID model, the cosine-kNN decision rule, or the species and acquisition distributions. Channel-shift robustness is therefore protocol-dependent, motivating evaluation across multiple stressor definitions and acquisition settings.
+Figure~\ref{fig:acc_heatmap} groups variants into families, while
+Supplementary Table~\ref{tab:perturbation} lists representative variant-level
+conditions. Compound perturbations and blur-like degradations are most
+destructive, whereas the evaluated RGB channel shifts and global photometric
+changes do not consistently reduce accuracy in the averaged Tier-A setting.
+Blue-channel shift is the clearest contrast with \citet{owens2025robustness}:
+it has mean drop $-0.009$ here, while Owens et al. found blue-channel changes
+harmful in their Peruvian WoodID setting. This difference is protocol-dependent
+and may reflect transform definition, magnitude, frozen rather than task-trained
+features, decision rule, or acquisition distribution.
 
-\begin{table}[pos=htbp]
-\centering
-\caption{Selected perturbation types ordered by mean accuracy drop.}
-\label{tab:perturbation}
-\begin{tabular}{lcc}
-\toprule
-Perturbation & Mean accuracy & Mean drop \\
-\midrule
-Compound & 0.219 & 0.723 \\
-Gaussian blur & 0.357 & 0.585 \\
-Compound optical & 0.448 & 0.494 \\
-Pixelate & 0.460 & 0.482 \\
-Compound field & 0.477 & 0.465 \\
-Defocus blur & 0.494 & 0.448 \\
-Shot noise & 0.553 & 0.389 \\
-Zoom blur & 0.565 & 0.377 \\
-Scratch & 0.762 & 0.180 \\
-Resize & 0.832 & 0.110 \\
-Blue-channel shift & 0.951 & -0.009 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The statistical ranking analysis confirms that robustness ranking is not identical to clean-accuracy ranking. Across 228 non-clean dataset--perturbation--severity conditions, the Friedman test rejects equal backbone ranks ($\chi^2=243.945$, $p=8.06\times 10^{-50}$), with low rank agreement (Kendall's $W=0.179$). The very small $p$-value reflects the large number of ranked conditions; Kendall's $W$ is the relevant effect-size summary and indicates weak concordance. The Nemenyi critical-difference analysis in Fig.~\ref{fig:nemenyi} gives the best mean ranks to DINOv2-B (2.882), Swin-T (3.145), and EfficientNet-B3 (3.601), while ResNet-50 has the weakest mean rank (5.469). In this diagram, lower mean rank means greater robustness, and backbones joined by a horizontal bar are not significantly different under the post-hoc rank comparison. The weak concordance ($W=0.179$) supports scenario-dependent model selection rather than a universal robustness ordering. This motivates the next question: which representation-level changes track the severity of these failures?
-
-\begin{figure}[pos=htbp]
-\centering
-\includegraphics[width=.82\linewidth]{results/figures/fig5_nemenyi_cd_diagram.png}
-\caption{Nemenyi critical-difference diagram for backbone robustness ranks over non-clean Tier-A conditions. Lower mean rank indicates stronger robustness.}
-\label{fig:nemenyi}
-\end{figure}
+The statistical ranking analysis confirms that robustness ranking is not
+identical to clean-accuracy ranking. Across 228 non-clean
+dataset--perturbation--severity conditions, the Friedman test rejects equal
+backbone ranks ($\chi^2=243.945$, $p=8.06\times 10^{-50}$), with low rank
+agreement (Kendall's $W=0.179$). DINOv2-B (2.882), Swin-T (3.145), and
+EfficientNet-B3 (3.601) have the best mean ranks, while ResNet-50 has the
+weakest mean rank (5.469); the critical-difference diagram is shown in
+Supplementary Fig.~\ref{fig:nemenyi}. The weak concordance supports
+scenario-dependent model selection rather than a universal robustness ordering.
+This motivates the next question: which representation-level changes track the
+severity of these failures?
 
 \subsection{The gap is measurable: drift tracks degradation}
 \label{sec:results_drift}
 
 The robustness experiment shows where models fail; the feature-geometry experiment tests which representation-level changes track that failure. For each clean-shifted pair, we measure how far the shifted embedding moves from its clean counterpart and how the class geometry changes. If feature drift is only a trivial consequence of image perturbation, it should not strongly track the magnitude of accuracy degradation across different datasets, backbones, and perturbations. Conversely, if representation displacement is empirically linked to failure, larger drift should consistently correspond to larger accuracy drop.
 
-Figure~\ref{fig:feature_geometry} and Table~\ref{tab:geometry_corr} report both
-pooled and controlled associations, with the controlled estimates providing the
-primary evidence. After controlling for dataset, backbone, perturbation family,
-and severity, feature drift retains a positive partial correlation with accuracy
-drop ($r=0.623$, $n=1596$), and in the complete-case hierarchical model it adds
-$\Delta R^2=0.032$ beyond the same metadata and severity controls
-(Table~\ref{tab:hier_strict}). The pooled association is larger ($r=0.908$,
+Figure~\ref{fig:feature_geometry} reports the geometry diagnostic, with the
+controlled estimates providing the primary evidence. After controlling for
+dataset, backbone, perturbation family,
+and severity over all 1596 records, feature drift retains a positive partial
+correlation with accuracy drop ($r=0.623$) and adds $\Delta R^2=0.048$ beyond
+those controls (Table~\ref{tab:primary_controlled}). The pooled association is
+larger ($r=0.908$,
 Spearman $\rho=0.937$, $n=1596$; clustered-bootstrap 95\% CI for $r$:
 $[0.892,0.922]$) and serves as an upper-bound diagnostic association because it
 is measured in the same frozen feature space used by the cosine-kNN decision
 rule. Inter-class collapse is also strongly related to degradation ($r=0.713$),
-indicating that shifted features reduce class separability. FGCS change has a
-weaker but still positive association ($r=0.340$), suggesting that the ratio
-between inter-class separation and intra-class compactness captures part of the
-failure but is less direct than paired feature displacement. Here $n=1596$
+indicating that shifted features reduce class separability; the full pooled
+geometry-correlation table is reported in Supplementary
+Table~\ref{tab:geometry_corr}. Here $n=1596$
 denotes aggregate backbone--dataset--perturbation records (228 non-clean Tier-A
 conditions across seven backbones), whereas the margin analysis below operates
 at the sample level over 9,551,148 clean-correct sample--perturbation records.
 The controlled increment is modest, but the controls are experimental metadata
 rather than signals available for an incoming unlabeled batch; drift is the
 operationally measurable quantity at test time.
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Primary controlled regression over all Tier-A records with global
+geometry ($n=1596$). The feature-drift increment is evaluated on the same
+records and after the same dataset, backbone, perturbation-family, and severity
+controls as the reported partial correlation. Feature-geometry, spatial, and
+CAM-proxy blocks require the fixed 630-record diagnostic subset and are
+therefore reported separately in Table~\ref{tab:hier_strict}.}
+\label{tab:primary_controlled}
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & $R^2$ & $\Delta R^2$ \\
+\midrule
+Controls only & 0.876 & 0.876 \\
++ Feature drift & 0.924 & 0.048 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[pos=htbp]
 \centering
@@ -804,24 +773,16 @@ for severity and metadata.}
 \label{fig:feature_geometry}
 \end{figure}
 
-\begin{table}[pos=htbp]
-\centering
-\caption{Pooled same-space correlation between representation-geometry metrics and accuracy drop; feature drift is an upper-bound diagnostic association because it is measured in the same frozen feature space used by the cosine-kNN rule.}
-\label{tab:geometry_corr}
-\begin{tabular}{lcc}
-\toprule
-Metric & Pearson $r$ & $n$ \\
-\midrule
-Feature drift & 0.908 & 1596 \\
-Inter-class collapse & 0.713 & 1596 \\
-Intra-class change & -0.653 & 1596 \\
-FSR collapse & 0.420 & 1596 \\
-FGCS change & 0.340 & 1596 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Rank-based and grouped checks complement the pooled Pearson coefficient. Feature drift has Spearman $\rho=0.937$ over the same 1596 records. After controlling for perturbation identity by residualization, the partial correlation between feature drift and accuracy drop remains high ($r=0.795$); under the stricter control for dataset, backbone, perturbation family, and severity, the association is smaller but still positive ($r=0.623$, $n=1596$). This shows that drift partly acts as a fine-grained severity proxy, but it retains information beyond nominal severity. The relationship is also consistent within every Tier-A dataset and every backbone, as summarized in Table~\ref{tab:consistency}; these are condition-level mean-drift versus mean-drop correlations, so they illustrate the shared severity trend rather than replacing the controlled partial-correlation evidence. Leave-one-dataset-out validation remains strong: when each Tier-A dataset is held out in turn, the mean held-out feature-drift/drop correlation is $r=0.913$, with a minimum of $0.895$.
+Rank-based and grouped checks complement the pooled Pearson coefficient. Feature drift has Spearman $\rho=0.937$ over the same 1596 records. After controlling for perturbation identity by residualization, the partial correlation between feature drift and accuracy drop remains high ($r=0.795$). With dataset, backbone, perturbation family, and severity controls, the full-record estimate remains positive ($r=0.623$, $n=1596$). This shows that drift partly acts as a fine-grained severity proxy, but it retains information beyond nominal severity. The relationship is also consistent within every Tier-A dataset and every backbone, as summarized in Table~\ref{tab:consistency}; these are condition-level mean-drift versus mean-drop correlations, so they illustrate the shared severity trend rather than replacing the controlled partial-correlation evidence. Leave-one-dataset-out validation remains strong: when each Tier-A dataset is held out in turn, the mean held-out feature-drift/drop correlation is $r=0.913$, with a minimum of $0.895$.
+The spatial and CAM-proxy analyses were run on a fixed diagnostic subset of 30
+conditions, yielding 630 records balanced across the three Tier-A datasets and
+seven backbones. This subset was selected by the spatial-analysis protocol
+rather than lost through extraction failure; it contains stronger shifts on
+average than the 966 omitted global-geometry records. On that subset, the same
+controls give partial $r=0.552$ and drift $\Delta R^2=0.032$, while the later
+spatial and CAM-proxy blocks add little. Selection and coverage diagnostics are
+reported with the complete hierarchy in Supplementary
+Section~\ref{app:controlled_checks}.
 
 The same conclusion holds when the decision rule is changed. The frozen linear
 probe in Appendix~\ref{app:additional_checks} is a multinomial logistic
@@ -837,9 +798,9 @@ query-to-own-clean matching isolates the result from that specific kNN coupling;
 metadata, severity, and cross-space controls address the remaining same-space
 dependence.
 
-The margin check provides a mechanistic complement. Proposition~1 is never
-violated by a prototype flip, but its worst-case
-safe region certifies only 0.3\% of records. A direction-aware margin improves
+The margin check provides a mechanistic complement. The necessary condition in
+Eq.~\eqref{eq:necessary} is satisfied by every observed prototype flip, but its
+worst-case safe region certifies only 0.3\% of records. A direction-aware margin improves
 sample-level flip ROC-AUC by only 0.005 (0.847 versus 0.842). Thus, the margin
 account explains how displacement can become error, while its conservative
 bound has limited predictive coverage;
@@ -868,7 +829,8 @@ Tier-A dataset & 0.895--0.931 & 532 \\
 Perturbation type & 0.594--0.902 & 63--126 \\
 Leave-one-dataset-out & mean 0.913, min 0.895 & held-out datasets \\
 Partial correlation controlling perturbation identity & 0.795 & 1596 \\
-Partial correlation with metadata+severity controls & 0.623 & 1596 \\
+Partial correlation, metadata+severity (primary full record) & 0.623 & 1596 \\
+Partial correlation, metadata+severity (spatial/CAM subset) & 0.552 & 630 \\
 Mixed model with grouped controls & $\beta=0.737$ & 1596 \\
 \bottomrule
 \end{tabular}
@@ -876,7 +838,7 @@ Mixed model with grouped controls & $\beta=0.737$ & 1596 \\
 
 At the global representation level, recognition failure is accompanied by measurable feature displacement and class-geometry deformation. Feature drift consequently provides a monitoring signal for the representation movement associated with accuracy loss in the controlled experiments.
 
-\subsection{The gap is partly in the model, not only the image}
+\subsection{The representation entangles acquisition source with species identity}
 
 Direct supporting evidence comes from the Tier-C source-vs-species probe
 (Fig.~\ref{fig:source_species_probe}). On the same accepted species, a
@@ -884,7 +846,9 @@ balanced leave-one-species-out two-centroid rule predicts acquisition source
 with mean accuracy 0.923 for BFS46$\leftrightarrow$FSDM41 and 0.940 for
 DTSR14$\leftrightarrow$WOODAUTH, well above the balanced binary-source chance
 level of 0.5. Cross-source species recognition is 0.014 against 24-class chance
-0.042 and 0.278 against four-class chance 0.25, respectively. Source prediction
+0.042 and 0.278 against four-class chance 0.25, respectively. These species
+values use the macro-averaged nearest-centroid probe defined in
+Section~\ref{sec:protocol}. Source prediction
 remains above 0.877 for every evaluated backbone, despite the test species being
 excluded from source-centroid estimation. Frozen features therefore retain a
 transferable source signature even when species geometry is below or near its
@@ -894,6 +858,10 @@ between-species distance for BFS46$\leftrightarrow$FSDM41 but 1.436 times for
 DTSR14$\leftrightarrow$WOODAUTH. Thus, a transferable source signature and
 misaligned species geometry can coexist without reducing to a single global
 offset.
+This includes DINOv2-B, which has the smallest mean perturbation drop among the
+evaluated backbones but still reaches held-out-species source accuracies of
+0.936 and 0.962 on the two Tier-C pairs. Robustness to the controlled
+perturbation suite therefore does not imply source-invariant species geometry.
 
 \begin{figure}[pos=htbp]
 \centering
@@ -911,26 +879,40 @@ near chance across sources.}
 A cross-space test on the synthetic Tier-A perturbations provides a more
 conservative supporting check (Fig.~\ref{fig:cross_space_drift}); the
 source-vs-species probe above instead uses real cross-source Tier-C data, so the
-two tests locate a model-induced component under both synthetic and real shift.
+two tests show that acquisition response depends partly on the frozen
+representation under both synthetic and real shift.
 Drift measured in backbone $A$ predicts the drop of backbone $B$ on the same
 Tier-A condition:
 the diagonal mean correlation is 0.947 and the off-diagonal mean is 0.896.
 However, after dataset, perturbation-family, and severity controls, the pooled
-cross-space partial correlation is only $r=0.178$, compared with $r=0.623$
-within space. The transferable component is therefore real but modest; most
-beyond-severity signal remains feature-space specific.
+cross-space partial correlation is only $r=0.178$ (condition-bootstrap 95\% CI
+$[0.119,0.235]$ over 228 aligned Tier-A conditions), compared with the primary
+full-record within-space estimate of $r=0.623$. The transferable component is therefore real
+but modest; most beyond-severity signal remains feature-space specific.
 
 \begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=.78\linewidth]{results/figures/cross_space_drift.png}
 \caption{Cross-space drift check. Raw off-diagonal associations are positive,
-but the controlled cross-space partial correlation ($r=0.178$) is much smaller
-than the within-space value ($r=0.623$).}
+but the controlled cross-space partial correlation ($r=0.178$; condition-bootstrap
+95\% CI $[0.119,0.235]$) is much smaller than the primary within-space value
+($r=0.623$).}
 \label{fig:cross_space_drift}
 \end{figure}
 
-Together, the source probe and cross-space control locate part of the
-acquisition-shift gap in the frozen representation itself. Spatial and CAM-proxy
+The circularity checks are therefore layered rather than interchangeable. The
+pooled same-space correlation is treated as an upper bound; the frozen linear
+probe removes cosine-kNN self-matching but remains in the same feature space;
+the cross-space test asks whether any controlled signal transfers to a different
+backbone; and the margin analysis explains how displacement can become a
+discrete decision flip. The surviving cross-space component is positive but
+small, so the paper's claim is not that drift is a calibrated universal scale,
+but that a limited diagnostic core remains after the most direct same-space
+couplings are weakened.
+
+Together, the source probe and cross-space control show that frozen
+representations retain acquisition-source information and respond to shift in
+feature-space-specific ways. Spatial and CAM-proxy
 metrics add only $\Delta R^2=0.004$ and $0.001$ after the global geometry blocks;
 they are retained as stability diagnostics in Supplementary
 Section~\ref{app:spatial_cam}, not as competing explanations. The next two
@@ -959,8 +941,9 @@ DTSR14$\leftrightarrow$WOODAUTH is a secondary pair with four shared temperate
 species. For each ordered direction and backbone, clean features from one source
 form the gallery and clean features from the other source form the query set. The
 drift signal is the class-centroid distributional drift
-$\Delta_{\mathrm{dist}}$, not paired $\Delta_f$, because no source provides
-matched images of the same specimen under both acquisition protocols.
+$\Delta_{\mathrm{dist}}$ defined in Section~\ref{sec:global_drift}, not paired
+$\Delta_f$, because no source provides matched images of the same specimen
+under both acquisition protocols.
 
 The primary BFS46$\leftrightarrow$FSDM41 transfer is almost completely
 non-transferable despite the 24-species shared label space: mean accuracy is
@@ -968,26 +951,57 @@ non-transferable despite the 24-species shared label space: mean accuracy is
 the seven backbones. The secondary DTSR14$\leftrightarrow$WOODAUTH pair is less
 catastrophic but still far below within-source performance, with mean accuracy
 0.316 for DTSR14$\rightarrow$WOODAUTH and 0.324 for
-WOODAUTH$\rightarrow$DTSR14. Directional asymmetry is small in both pairs
+WOODAUTH$\rightarrow$DTSR14. These directed values are micro-averaged cosine
+5-NN transfer accuracies, whereas the 0.278 value above is a macro-averaged
+nearest-centroid probe. Directional asymmetry is small in both pairs
 ($-0.005$ and $-0.008$), so the dominant Tier-C effect is not directionality but
-source incompatibility.
-For BFS46$\leftrightarrow$FSDM41, the directional accuracies
-0.008--0.013 are also below the 24-class chance level
-($1/24\approx0.042$), indicating systematically misaligned cross-source
-geometry rather than only weak transfer. This interpretation remains subject to
-the coarseness of accepted-name matching across datasets: a shared GBIF name
-does not guarantee identical taxonomic granularity, specimen provenance, or
-labeling practice.
-Together with the held-out-species source probe, this below-chance result is the
+source incompatibility. Table~\ref{tab:cross_source_protocols} keeps the macro
+nearest-centroid and directed micro-5-NN protocols explicit; these columns are
+different evaluation protocols, not duplicate estimates of the same quantity.
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Cross-source species-recognition protocols. The nearest-centroid
+probe is macro-averaged; directed cosine 5-NN is micro-averaged. Permutation
+nulls shuffle query labels within each backbone--direction cell, preserving
+class frequencies and predictions.}
+\label{tab:cross_source_protocols}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Source pair & Macro NC & Directed micro 5-NN & Null mean & Null result \\
+\midrule
+BFS46/FSDM41 & 0.014 & 0.008 / 0.013 & 0.036 / 0.036 & 14/14 below, $p\leq0.0003$ \\
+DTSR14/WOODAUTH & 0.278 & 0.316 / 0.324 & 0.292 / 0.317 & mixed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For BFS46$\leftrightarrow$FSDM41, the directional micro-averaged accuracies
+0.008--0.013 fall below the label-permutation null in all 14
+backbone--direction configurations. The null shuffles query labels while
+holding predictions and class frequencies fixed; its directional mean
+accuracies are 0.036 and 0.036, and every empirical one-sided test gives
+$p\leq0.0003$. This supports systematic class-conditional misalignment rather
+than merely weak or class-imbalanced transfer. The secondary
+DTSR14$\leftrightarrow$WOODAUTH pair is mixed relative to its null and is not
+used for the below-null claim.
+Its taxonomic interpretation remains subject to the coarseness of matching
+across datasets: a shared GBIF name does not guarantee identical granularity,
+specimen provenance, or labeling practice.
+Together with the held-out-species source probe, this very low transfer is the
 class-conditional failure that the later marginal MMD decomposition cannot
 recover from pooled feature distributions alone.
+Below-null transfer is possible because the nearest neighbours are not random:
+features from a species in one source are consistently displaced toward other
+species in the target source, producing structured anti-transfer rather than
+uninformative guessing.
 
-Distributional drift remains informative, but the relationship is weaker and
-shifted upward relative to the paired Tier-A line. Over 392
+Distributional drift remains informative within Tier-C. Over 392
 species--direction--backbone records, class-centroid drift correlates positively
-with cross-source accuracy drop ($r=0.331$). The cross-source fitted slope is
-0.302, only 0.291 times the Tier-A slope, with a mean absolute residual of 0.488
-on the Tier-A line. The reason is visible in Fig.~\ref{fig:tierc_cross_source}:
+with cross-source accuracy drop ($r=0.331$, bootstrap 95\% CI
+$[0.264,0.395]$). The reason the association remains modest is visible in
+Fig.~\ref{fig:tierc_cross_source}:
 many records have drops near one, especially in BFS46$\leftrightarrow$FSDM41,
 creating a saturation regime where additional centroid drift cannot linearly
 explain much more degradation.
@@ -1004,29 +1018,25 @@ without assigning the full failure to acquisition change alone.
 
 \begin{figure}[pos=htbp]
 \centering
-\IfFileExists{results/figures/tierc_cross_source_shift.png}{%
-  \includegraphics[width=\linewidth]{results/figures/tierc_cross_source_shift.png}%
-}{%
-  \fbox{\parbox{0.9\linewidth}{\centering Run \texttt{python -m wood\_spatial.experiments.exp\_tierc\_cross\_source\_shift --real} to generate tierc\_cross\_source\_shift.png}}%
-}
+\includegraphics[width=\linewidth]{results/figures/tierc_cross_source_shift.png}
 \caption{Tier-C real cross-source distribution shift across acquisition
 pipelines. The analysis restricts the
 label space to accepted species shared by two acquisition sources and compares
 distributional class-centroid drift with cross-source accuracy drop. The positive
 but weak association ($r=0.331$) is qualitative rather than predictive in this
-saturated regime; cross-source transfer is a harsher real-shift regime rather
-than a direct slope match to the paired Tier-A perturbation line.}
+saturated regime. Diamonds in panel (b) mark label-permutation null means; both
+BFS46/FSDM41 directions are below the null for every backbone.}
 \label{fig:tierc_cross_source}
 \end{figure}
 
 \subsection{Consequence 2: cross-magnification asymmetry}
 
 Cross-magnification results on VN26 reveal the WoodID-specific deployment
-scenario. Within-magnification accuracy is near perfect (0.996 at x10, 1.000 at
-x20, and 0.995 at x50), but the full 3$\times$3 transfer matrix in
-Table~\ref{tab:crossmag} shows that accuracy drops sharply whenever the training
-and testing magnifications differ. Transfer from x10 to x20 remains partially
-viable (0.619), but transfer involving x50 is much weaker, especially
+scenario. The principal result is not the absolute contrast with the diagonal
+baseline but the directional asymmetry and non-monotonicity among off-diagonal
+transfers. The full transfer matrix is reported in
+Table~\ref{tab:crossmag}: transfer from x10 to x20 remains partially viable
+(0.619), whereas transfer involving x50 is much weaker, especially
 x20$\rightarrow$x50 (0.160), x50$\rightarrow$x20 (0.179), and
 x10$\rightarrow$x50 (0.202).
 
@@ -1043,12 +1053,16 @@ pair is near-symmetric on average ($|A|=0.019$) and has weak sign agreement
 (57.1\%), which is insufficient to establish a stable transfer direction.
 Transfer is also not
 monotone in the magnification ratio: the 5$\times$ x10--x50 pair has higher mean
-bidirectional accuracy (0.242) than the 2.5$\times$ x20--x50 pair (0.170),
+bidirectional accuracy (0.242) than the 2.5$\times$ x20--x50 pair (0.170);
+the backbone-bootstrap difference is 0.073 (95\% CI $[0.043,0.112]$),
 indicating that x50 is the locus of cross-scale incompatibility rather than scale
-ratio alone. The associated spatial stability analysis is shown in
+ratio alone. This non-monotone pattern argues against a pure magnification-ratio
+account, although optical scale and x50-specific acquisition quality cannot be
+fully disentangled with the public metadata. The associated spatial stability analysis is shown in
 Appendix~\ref{app:spatial_cam}.
 
-This pattern has a WoodID-specific interpretation. At x50, the apparent scale of
+This pattern has a WoodID-specific interpretation, but it is established on one
+multi-magnification source. At x50, the apparent scale of
 vessels, rays, parenchyma, and local texture fragments changes enough that
 features learned from coarser galleries no longer describe the same anatomical
 evidence. Transfer is therefore asymmetric: information visible at a coarser
@@ -1056,44 +1070,45 @@ scale is not simply recoverable after moving to a finer view, and fine-scale
 texture statistics do not necessarily aggregate back into the same coarser
 feature neighbourhood. The sign reversal between x10--x20 and x10--x50 is
 consistent with this non-invertible scale change. It makes the VN26 result more
-than a generic domain-shift example: the failure follows from the optical scale
-at which wood anatomy is represented.
+than a generic domain-shift example: the observed failure is tied to the optical
+scale and acquisition condition at which wood anatomy is represented, while its
+generality beyond VN26 remains unestablished.
 An additional, non-exclusive explanation is that x50 covers a smaller field of
 view, changing spatial-frequency content and the match between anatomical
 structures and the frozen backbone's effective receptive field.
 
 The cross-magnification asymmetry analysis further tests whether this optical
 scale failure is a separate phenomenon or another instance of representation
-drift. Using class-centroid drift between matched species across magnifications,
-cross-magnification accuracy drop correlates with drift at
-$r=0.578$ over 42 directed backbone--magnification records, and the
-cross-magnification regression slope is 0.809 times the Tier-A drift--drop slope.
-The Tier-A drift--drop line is fit on WRD25, DTSR14, and PCA11 only; VN26 is
-held out from that fit, so the Tier-D overlay is a genuine held-out comparison.
-The mean absolute residual on the Tier-A line is 0.337, so the cross-magnification
-points do not follow the synthetic-perturbation trend exactly. They nevertheless
-show the same positive drift--failure direction while exposing a
+drift. Using class-centroid distributional drift between matched species across
+magnifications, as defined in Section~\ref{sec:global_drift},
+cross-magnification accuracy drop correlates with drift at $r=0.578$ over 42
+directed backbone--magnification records (bootstrap 95\% CI $[0.381,0.748]$).
+This is a within-Tier-D association and is not slope-compared with paired
+Tier-A drift, which is a different quantity. The
+result nevertheless shows a positive drift--failure direction while exposing a
 WoodID-specific scale-transfer effect. Magnification asymmetry is therefore the
 domain-specific failure mode, and representation drift is the common diagnostic
-axis connecting it to the controlled perturbation benchmark.
+axis connecting it to the controlled perturbation benchmark (consistent in
+direction, not a shared calibrated scale across shift types).
 
 \begin{figure}[pos=htbp]
 \centering
-\IfFileExists{results/figures/cross_magnification_asymmetry.png}{%
-  \includegraphics[width=\linewidth]{results/figures/cross_magnification_asymmetry.png}%
-}{%
-  \fbox{\parbox{0.9\linewidth}{\centering Run \texttt{python cross\_magnification\_asymmetry.py --real} to generate cross\_magnification\_asymmetry.png}}%
-}
+\includegraphics[width=\linewidth]{results/figures/cross_magnification_asymmetry.png}
 \caption{VN26 cross-magnification asymmetry. The analysis reports signed transfer
 asymmetry, non-monotone scale-ratio behaviour, and the relationship between
 cross-magnification feature drift and accuracy drop ($r=0.578$ over 42 directed
-backbone--magnification records).}
+backbone--magnification records; bootstrap 95\% CI $[0.381,0.748]$).}
 \label{fig:crossmag_asymmetry}
 \end{figure}
 
 \begin{table}[pos=htbp]
 \centering
-\caption{VN26 full cross-magnification mean accuracy over seven frozen backbones. Diagonal entries are within-magnification baselines; off-diagonal entries use the source magnification as the clean gallery and the target magnification as the query set.}
+\caption{VN26 full cross-magnification mean accuracy over seven frozen
+backbones. Diagonal entries are image-file cross-validation baselines and are
+not specimen-disjoint deployment estimates. Off-diagonal entries use the source
+magnification as the clean gallery and the target magnification as the query
+set; the public metadata do not establish one-to-one specimen pairing across
+magnifications.}
 \label{tab:crossmag}
 \begin{tabular}{lccc}
 \toprule
@@ -1108,14 +1123,14 @@ x50 & 0.283 & 0.179 & 0.995 \\
 
 \subsection{A derived label-free acquisition-mismatch alarm}
 \label{sec:refbank_results}
-\label{sec:monitoring_results}
 
 The final experiment evaluates a deployment-oriented consequence of the
 diagnosis. Paired feature drift is unavailable for an incoming batch because the
-system does not observe a clean version of the same image. We therefore construct
-a clean reference bank for each dataset/backbone and score shifted batches
-without target labels. A record is retrospectively labelled as a recognition
-failure when its kNN accuracy drop exceeds 0.20. Labels define only this
+system does not observe a clean version of the same image. We therefore use the
+reference-bank scores defined in Section~\ref{sec:refbank_method}: a clean
+reference bank is constructed for each dataset/backbone and shifted batches are
+scored without target labels. A record is retrospectively labelled as a
+recognition failure when its kNN accuracy drop exceeds 0.20. Labels define only this
 evaluation target; they do not enter the alarm score. The experiment is a
 batch-level benchmark and real-shift validity check, not a fielded monitoring
 system.
@@ -1126,29 +1141,19 @@ intervals for ROC-AUC and F1. RBF-MMD reaches batch-level ROC-AUC 0.968
 (95\% CI 0.964--0.973) and F1 0.909 (95\% CI 0.902--0.918), compared with
 batch-level ROC-AUC 0.976 for the paired feature-drift oracle evaluated on the
 same 4,256 monitor records.
+These records comprise 1,596 Tier-A batches from WRD25, DTSR14, and PCA11 and
+2,660 Tier-B batches from the five external controlled sources.
 Leave-one-perturbation-family-out evaluation over held-out batch records gives
 mean ROC-AUC 0.946 and mean F1 0.675 (Table~\ref{tab:lopo}). Thus, acquisition mismatch can
 be detected without target labels or clean--shifted pairs in this benchmark, but
 thresholds remain shift-family dependent.
 
-Figure~\ref{fig:monitor_roc} instead compares controlled diagnostic signals over
-1596 condition-level Tier-A records. In that protocol, paired feature drift
-reaches condition-level ROC-AUC 0.975 and remains stable when the accuracy-drop threshold varies
-from 0.10 to 0.40 (ROC-AUC range 0.963--0.984). Its value differs slightly from
-the 0.976 batch-level oracle in Table~\ref{tab:monitor} because the record sets
-and aggregation levels differ. The figure is therefore a diagnostic comparison,
-not a reference-bank deployment result.
-
-\begin{figure}[pos=htbp]
-\centering
-\includegraphics[width=\linewidth]{results/figures/fig8_roc_failure_detection.png}
-\caption{Controlled diagnostic failure detection over 1596 condition-level
-Tier-A records. Paired feature drift reaches condition-level ROC-AUC 0.975 in this protocol and
-is an oracle because it requires clean--shifted pairs. The separate
-reference-bank benchmark over 4256 batch records is reported in
-Table~\ref{tab:monitor}.}
-\label{fig:monitor_roc}
-\end{figure}
+Supplementary Fig.~\ref{fig:monitor_roc} compares controlled diagnostic signals
+over 1596 condition-level Tier-A records. Paired feature drift reaches
+condition-level ROC-AUC 0.975 in that oracle protocol and remains stable when
+the accuracy-drop threshold varies from 0.10 to 0.40 (ROC-AUC range
+0.963--0.984). This value differs slightly from the 0.976 batch-level oracle in
+Table~\ref{tab:monitor} because the record sets and aggregation levels differ.
 
 Sensitivity and transfer checks are reported in Supplementary
 Section~\ref{app:additional_checks}. They show strong leave-one-dataset-out
@@ -1164,11 +1169,16 @@ query set scored against its corresponding clean reference bank, with RBF-MMD
 computed on at most 512 sampled feature vectors per side. Under this protocol,
 the monitor flags 32/42 Tier-D cross-magnification batches (76.2\%) and 28/28
 Tier-C cross-source batches (100\%); pooled over Tier-C and Tier-D, the
-real-shift alarm count is 60/70 batches. This provides a real-shift validity
-check beyond the synthetic benchmark: the detector fires on the evaluated
-unpaired acquisition mismatches. Binary detection and severity estimation are
-distinct evaluation targets. Supplementary Fig.~\ref{fig:monitor_real_shift}
-retains the capped-score protocol used for the 60/70 alarm count. Its mean
+real-shift alarm count is 60/70 batches. These are batch-level
+backbone-by-shift records over a small number of independent source and
+magnification conditions, so the result validates firing behaviour on the
+evaluated mismatches rather than field reliability. This provides a real-shift
+validity check beyond the synthetic benchmark: the detector fires on the
+evaluated unpaired acquisition mismatches. Binary detection and severity estimation are
+distinct evaluation targets. All ten Tier-D misses occur on the adjacent
+x10$\leftrightarrow$x20 transfer, while every direction involving x50 triggers
+all seven backbone alarms. Supplementary Fig.~\ref{fig:monitor_real_shift}
+retains the capped-score protocol used for the 60/70 alarm count. Mean
 RBF-MMD scores are not monotone in the coarse intended tier ordering
 (Spearman $\rho=0.300$ against the predefined clean/Tier-B/Tier-D/Tier-C
 ordering). A separate full-feature decomposition confirms the same Tier-C
@@ -1301,8 +1311,10 @@ shifts.
 
 The controlled results support a bounded conclusion. Representation drift
 contains a modest signal beyond dataset, backbone, perturbation family, and
-severity (partial $r=0.623$, $\Delta R^2=0.032$), while only a small component
-transfers across feature spaces ($r=0.178$). The pooled same-space correlation
+severity over all 1596 Tier-A records (partial $r=0.623$,
+$\Delta R^2=0.048$). The fixed 630-record spatial/CAM subset gives the smaller
+partial $r=0.552$ and drift increment 0.032. Only a small component transfers across feature
+spaces ($r=0.178$, 95\% CI $[0.119,0.235]$). The pooled same-space correlation
 ($r=0.908$) is therefore an upper bound, not the principal evidence. This pattern
 is scientifically informative: drift is largely a fine-grained severity proxy
 plus a representation-specific component, with a smaller transferable core.
@@ -1316,9 +1328,10 @@ definitional or causal.
 The real-shift analyses reveal a consistent class-conditional thread across three
 otherwise different tests. The source-versus-species probe
 (Fig.~\ref{fig:source_species_probe}) shows that source identity remains
-predictable for held-out species; the below-chance cross-source result
-(Section~\ref{sec:tierc_cross_source}) shows that species identity is
-systematically misaligned across those sources; and the kernel decomposition
+predictable for held-out species; the very low cross-source result
+(Section~\ref{sec:tierc_cross_source}) falls below the label-permutation null
+in every BFS46/FSDM41 backbone--direction cell, showing that species identity
+is systematically misaligned across those sources; and the kernel decomposition
 (Section~\ref{sec:refbank_results}) shows why a marginal monitor cannot fully
 represent that failure. Together, these observations are consistent with
 class-conditional misalignment within a source-encoded marginal organization
@@ -1356,6 +1369,10 @@ This marginal-versus-conditional mismatch links the monitor limitation to the
 source-encoded geometry diagnosed above. The matched four-species control
 isolates the same limitation from label-space size: MMD differs by only 0.016,
 whereas failure remains 0.125 higher for BFS46/FSDM41.
+More broadly, this suggests a caution for representation-drift monitoring in
+fine-grained recognition: a marginal two-sample alarm can detect acquisition
+mismatch while remaining insensitive to the class-conditional geometry
+permutations that determine recognition failure.
 A fixed threshold transferred to unseen perturbation
 families with F1 falling from 0.909 in the pooled benchmark to 0.675 under
 leave-one-family-out evaluation; near-1\% failure families also make some held-out
@@ -1410,12 +1427,19 @@ clean accuracy should not be interpreted as specimen-disjoint field performance,
 especially for patch-derived datasets. Specimen leakage where present can
 inflate absolute clean and shifted accuracies, but it does not by itself create
 the within-record drift/drop association; the relationship is additionally
-supported on non-patch Tier-B sources such as WOODAUTH, GOIMAI, and BFS46 and
-under the frozen linear probe. Specimen-disjoint validation remains future work
+supported by a WRD25-only non-patch sensitivity check (partial $r=0.616$,
+$\Delta R^2=0.026$ after backbone, perturbation-family, and severity controls),
+where the smaller increment reflects the single-dataset variance structure,
+by non-patch Tier-B sources such as WOODAUTH, GOIMAI, and BFS46, and by the
+frozen linear probe. Specimen-disjoint validation remains future work
 pending public datasets with consistent specimen identifiers. Because the
 evaluated public metadata do not provide a consistent specimen, session, device,
 or sheet grouping across sources, the possible inflation cannot be quantified
-with a source-cluster holdout in the present study. Third, the
+with a source-cluster holdout in the present study. The evaluated backbones are
+general-purpose ImageNet- or self-supervised pretrained representations; a
+wood-domain-pretrained backbone may learn different source--species geometry,
+so the representation-level conclusions should not be generalized to such
+models without direct evaluation. Third, the
 correlation analyses use grouped backbone--dataset--perturbation records. We
 report within-group, rank, partial-correlation, mixed-effects,
 clustered-bootstrap, and leave-one-dataset-out checks, but these remain
@@ -1438,22 +1462,23 @@ establishes universal severity calibration for unseen field shifts.
 \section{Conclusion}
 
 MRD-Wood provides a controlled diagnosis of WoodID failure under acquisition
-shift. After metadata and severity controls, paired drift retains partial
-$r=0.623$ and adds $\Delta R^2=0.032$; the smaller cross-space partial
-correlation ($r=0.178$) shows that the transferable diagnostic core is real but
-limited. The pooled $r=0.908$ is consequently an upper bound shaped by severity
-and same-space coupling. Acquisition source remains predictable for held-out
-species even when cross-source species recognition fails, locating part of the
-acquisition-shift gap in the representation rather than only in image quality.
+shift. After metadata and severity controls over all 1596 Tier-A records,
+paired drift retains partial $r=0.623$ and adds $\Delta R^2=0.048$. The smaller cross-space
+partial correlation ($r=0.178$, 95\% CI $[0.119,0.235]$) shows that the transferable diagnostic core is
+real but limited. The pooled $r=0.908$ is consequently an upper bound shaped by
+severity and same-space coupling. Acquisition source remains predictable for
+held-out species even when cross-source species recognition fails, showing that
+frozen representations entangle acquisition source with species geometry.
 
-The principal domain findings are the cross-source collapse boundary and the
-asymmetric, non-monotone VN26 magnification transfer. A standard reference-bank
-monitor can flag many shifted batches without target labels, but it requires
-shift-specific calibration and is not a universal severity meter: even after
-matching both Tier-C pairs to four species, similar marginal MMD coexists with
-materially different class-conditional transfer failure. The study
+The principal domain-specific finding is the asymmetric, non-monotone VN26
+magnification transfer; the cross-source collapse provides a complementary
+real-shift boundary. A standard reference-bank monitor can flag many shifted
+batches without target labels, but it requires shift-specific calibration and
+is not a universal severity meter: even after matching both Tier-C pairs to four
+species, similar marginal MMD coexists with materially different
+class-conditional transfer failure. The study
 therefore closes with a mitigation question rather than a monitoring claim:
-future WoodID systems should explicitly align species geometry across
+for frozen general-purpose representations, future WoodID systems should explicitly align species geometry across
 acquisition sources and optical scales while suppressing source identity
 conditional on species, rather than removing all source information when source
 and species distributions are correlated.
@@ -1481,8 +1506,156 @@ The Supplementary Material contains spatial and CAM-proxy diagnostics,
 analytical proofs, robustness and decision-rule checks, monitoring sensitivity
 analyses, and scoped augmentation and negative-control experiments.
 
+\section{Main-text Supporting Tables and Diagnostic Figures}
+\label{app:main_supporting}
+
+This section collects compact tables and diagnostic figures that are cited from
+the main text but are not themselves separate findings. They document the
+study positioning, notation, perturbation ordering, backbone-rank comparison,
+pooled same-space geometry correlations, and the paired-drift oracle ROC used
+to contextualize the main controlled and real-shift results.
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Positioning of MRD-Wood relative to representative WoodID, robustness,
+and representation-monitoring studies. A check mark denotes an explicit
+evaluation component; ``partial'' denotes a limited treatment. The alarm column
+records whether label-free monitoring is evaluated.}
+\label{tab:positioning}
+\scriptsize
+\setlength{\tabcolsep}{2.1pt}
+\begin{tabular}{p{0.24\linewidth}cccccc}
+\toprule
+Study & Multi-source & Stress test & Repr. diagnosis & Cross-source & Cross-mag. & Alarm \\
+\midrule
+\citet{paulafilho2014forest}, \citet{souza2020brazilian} & -- & -- & -- & -- & -- & -- \\
+\citet{sun2021smallwood}, \citet{fabijanska2021woodcore} & -- & -- & -- & -- & -- & -- \\
+\citet{herrera2026goimai} & -- & -- & -- & -- & -- & -- \\
+\citet{ravindran2021field}, \citet{ravindran2022caveat} & partial & partial & -- & -- & -- & -- \\
+\citet{ravindran2022multixylarium} & \checkmark & -- & -- & partial & -- & -- \\
+\citet{nguyentrong2023magnification} & -- & partial & -- & -- & \checkmark & -- \\
+\citet{owens2025robustness} & -- & \checkmark & -- & -- & -- & -- \\
+\citet{greco2024driftlens,tziouvaras2025alert,nguyen2025d3m} & partial & -- & \checkmark & -- & -- & \checkmark \\
+MRD-Wood & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Main notation used by MRD-Wood.}
+\label{tab:symbols}
+\small
+\begin{tabular}{p{0.18\linewidth}p{0.72\linewidth}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\hat z$ & Global $L_2$-normalized feature vector extracted by a frozen backbone. \\
+$\Delta A$ & Accuracy drop from clean to shifted evaluation. \\
+$\Delta_f$ & Paired feature drift between a clean image and its shifted counterpart. \\
+$\Delta_{\mathrm{dist}}$ & Distributional feature drift between unpaired source and target batches. \\
+$d_{\mathrm{intra}}, d_{\mathrm{inter}}$ & Intra-class compactness and inter-class centroid separation. \\
+$FGCS, FSR$ & Feature-geometry collapse score and feature-space separability ratio. \\
+$SGI$ & Spatial granularity index of the clustered token map. \\
+$CSI, CSI_H$ & Spatial-cluster stability index and Hungarian-matched variant. \\
+$H(p), JSD$ & CAM-proxy concentration and clean-to-shift redistribution. \\
+$B_0, B_t$ & Clean reference bank and incoming evaluation batch. \\
+$r, \rho$ & Pearson and Spearman correlations. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Selected perturbation types ordered by mean accuracy drop.}
+\label{tab:perturbation}
+\small
+\begin{tabular}{lcc}
+\toprule
+Perturbation & Mean accuracy & Mean drop \\
+\midrule
+Compound & 0.219 & 0.723 \\
+Gaussian blur & 0.357 & 0.585 \\
+Compound optical & 0.448 & 0.494 \\
+Pixelate & 0.460 & 0.482 \\
+Compound field & 0.477 & 0.465 \\
+Defocus blur & 0.494 & 0.448 \\
+Shot noise & 0.553 & 0.389 \\
+Zoom blur & 0.565 & 0.377 \\
+Scratch & 0.762 & 0.180 \\
+Resize & 0.832 & 0.110 \\
+Blue-channel shift & 0.951 & -0.009 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[pos=htbp]
+\centering
+\includegraphics[width=.82\linewidth]{results/figures/fig5_nemenyi_cd_diagram.png}
+\caption{Nemenyi critical-difference diagram for backbone robustness ranks over
+non-clean Tier-A conditions. Lower mean rank indicates stronger robustness.}
+\label{fig:nemenyi}
+\end{figure}
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Pooled same-space correlation between representation-geometry metrics
+and accuracy drop; feature drift is an upper-bound diagnostic association
+because it is measured in the same frozen feature space used by the cosine-kNN
+rule.}
+\label{tab:geometry_corr}
+\small
+\begin{tabular}{lcc}
+\toprule
+Metric & Pearson $r$ & $n$ \\
+\midrule
+Feature drift & 0.908 & 1596 \\
+Inter-class collapse & 0.713 & 1596 \\
+Intra-class change & -0.653 & 1596 \\
+FSR collapse & 0.420 & 1596 \\
+FGCS change & 0.340 & 1596 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[pos=htbp]
+\centering
+\includegraphics[width=\linewidth]{results/figures/fig8_roc_failure_detection.png}
+\caption{Controlled diagnostic failure detection over 1596 condition-level
+Tier-A records. Paired feature drift reaches condition-level ROC-AUC 0.975 in
+this protocol and is an oracle because it requires clean--shifted pairs. The
+separate reference-bank benchmark over 4256 batch records is reported in
+Table~\ref{tab:monitor}.}
+\label{fig:monitor_roc}
+\end{figure}
+
+\FloatBarrier
+
 \section{Spatial, CAM-proxy, and Cross-magnification Diagnostic Panels}
 \label{app:spatial_cam}
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Exact timm identifiers and pretrained-weight tags used for the seven
+frozen backbones. The reproducibility environment pins \texttt{timm==0.9.12};
+the released machine-readable manifest records the compatible resolver
+environment used to export these identifiers and tags.}
+\label{tab:backbone_manifest}
+\scriptsize
+\begin{tabular}{lll}
+\toprule
+Backbone & timm model identifier & Pretrained tag \\
+\midrule
+ResNet-50 & \texttt{resnet50} & \texttt{a1\_in1k} \\
+EfficientNet-B3 & \texttt{efficientnet\_b3} & \texttt{ra2\_in1k} \\
+ConvNeXt-T & \texttt{convnext\_tiny} & \texttt{in12k\_ft\_in1k} \\
+Swin-T & \texttt{swin\_tiny\_patch4\_window7\_224} & \texttt{ms\_in1k} \\
+DINOv2-B & \texttt{vit\_base\_patch14\_dinov2.lvd142m} & \texttt{lvd142m} \\
+HRNet-W32 & \texttt{hrnet\_w32} & \texttt{ms\_in1k} \\
+MobileNetV3-L & \texttt{mobilenetv3\_large\_100} & \texttt{ra\_in1k} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 This appendix contains extended spatial and CAM-proxy diagnostics. The
 quantitative backbone summary is reported in
@@ -1693,9 +1866,12 @@ additional public acquisition sources.}
 
 \noindent\textbf{Lemma 1.}
 For unit vectors $\hat z,\hat z'$,
-$\|\hat z'-\hat z\|_2^2=\|\hat z'\|_2^2+\|\hat z\|_2^2-2\langle \hat z,\hat z'\rangle
-=2-2(1-\Delta_f)=2\Delta_f$, hence
-$\|\hat z'-\hat z\|_2=\sqrt{2\,\Delta_f}$.
+\begin{equation}
+\|\hat z'-\hat z\|_2^2
+=\|\hat z'\|_2^2+\|\hat z\|_2^2-2\langle \hat z,\hat z'\rangle
+=2-2(1-\Delta_f)=2\Delta_f,
+\end{equation}
+and hence $\|\hat z'-\hat z\|_2=\sqrt{2\,\Delta_f}$.
 
 \noindent\textbf{Lemma 2.}
 Each prototype score $\hat z\mapsto\langle \hat z,p_c\rangle$ is
@@ -1704,15 +1880,21 @@ functions is $1$-Lipschitz, so
 $\max_{c\neq y}\langle\cdot,p_c\rangle$ is $1$-Lipschitz. The prototype margin is
 the difference between two $1$-Lipschitz functions and is therefore
 $2$-Lipschitz:
-$|\Gamma(\hat z')-\Gamma(\hat z)|\le2\|\hat z'-\hat z\|_2$.
+\begin{equation}
+|\Gamma(\hat z')-\Gamma(\hat z)|\le2\|\hat z'-\hat z\|_2 .
+\end{equation}
 
 \noindent\textbf{Proposition 1.}
 By Lemmas 1 and 2,
-$\Gamma(\hat z')\ge \Gamma(\hat z)-2\|\hat z'-\hat z\|_2
-=\Gamma(x)-2\sqrt{2\Delta_f}$. If
-$\Delta_f<\Gamma(x)^2/8$, then
-$2\sqrt{2\Delta_f}<2\sqrt{2\cdot\Gamma(x)^2/8}=\Gamma(x)$, hence
-$\Gamma(\hat z')>0$ and the shifted feature keeps the correct label.
+\begin{equation}
+\Gamma(\hat z')\ge \Gamma(\hat z)-2\|\hat z'-\hat z\|_2
+=\Gamma(x)-2\sqrt{2\Delta_f}.
+\end{equation}
+If $\Delta_f<\Gamma(x)^2/8$, then
+\begin{equation}
+2\sqrt{2\Delta_f}<2\sqrt{2\cdot\Gamma(x)^2/8}=\Gamma(x),
+\end{equation}
+hence $\Gamma(\hat z')>0$ and the shifted feature keeps the correct label.
 
 For a frozen linear probe with class weights $\{w_c\}$ and scores
 $g_c(\hat z)=w_c^\top\hat z+b_c$, each score is $\|w_c\|_2$-Lipschitz. With
@@ -1764,7 +1946,7 @@ tail.}
 \subsection{Quantitative context from prior WoodID studies}
 
 Table~\ref{tab:related_quant} provides representative quantitative context for
-the studies discussed in Section~2. Their results are reported under different
+the studies discussed in Section~\ref{sec:related}. Their results are reported under different
 datasets, splits, and acquisition protocols and are therefore not directly
 comparable.
 
@@ -1791,12 +1973,39 @@ Study & Setting & Reported result and relevance \\
 \end{table}
 
 \subsection{Controlled regression and decision-rule checks}
+\label{app:controlled_checks}
 
-Table~\ref{tab:hier_strict} repeats the hierarchical analysis under a stricter
-complete-case setting where dataset, backbone, perturbation family, and severity
-are included before any representation metric is added. The increments are
-smaller than in Table~\ref{tab:r2}, which begins with perturbation identity
-alone, because the complete-case controls already explain substantial
+The spatial/CAM protocol evaluates 30 preselected perturbation--severity
+conditions, giving 630 records (30 conditions $\times$ three datasets
+$\times$ seven backbones). Coverage is therefore balanced by dataset and
+backbone but intentionally incomplete by perturbation and severity. As shown in
+Table~\ref{tab:spatial_selection}, the selected subset contains larger shifts
+than the remaining global-geometry records; its hierarchy is consequently
+interpreted as a secondary diagnostic analysis rather than as the primary
+controlled estimate. The complete condition-level coverage is released in
+\texttt{exp7\_spatial\_cam\_selection\_coverage.csv}.
+
+\begin{table}[pos=htbp]
+\centering
+\caption{Selection profile for the fixed spatial/CAM diagnostic subset.
+Standardized mean differences compare selected with omitted records.}
+\label{tab:spatial_selection}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Subset & $n$ & Mean drift & Mean drop & SMD (drift/drop) \\
+\midrule
+Selected spatial/CAM conditions & 630 & 0.387 & 0.346 & 0.487 / 0.529 \\
+Other global-geometry conditions & 966 & 0.267 & 0.198 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:hier_strict} reports the secondary hierarchy on the fixed
+630-record spatial/CAM diagnostic subset. Dataset, backbone, perturbation
+family, and severity are included before any representation metric is added.
+The increments are smaller than in Table~\ref{tab:r2}, which begins with
+perturbation identity alone, because the controls already explain substantial
 variation. Table~\ref{tab:decision_rule} evaluates decision-rule sensitivity.
 Its linear probe is trained on clean training-split features and evaluated on
 perturbed test-split features, so no query is matched to its own clean
@@ -1805,9 +2014,9 @@ this non-kNN classifier ($r=0.922$, $\rho=0.942$, $n=1596$).
 
 \begin{table}[pos=htbp]
 \centering
-\caption{Controlled complete-case hierarchical regression ($n=630$). The base
-model includes dataset, backbone, perturbation family, and severity controls
-before adding representation metrics.}
+\caption{Controlled hierarchy on the fixed spatial/CAM diagnostic subset
+($n=630$). The base model includes dataset, backbone, perturbation family, and
+severity controls before adding representation metrics.}
 \label{tab:hier_strict}
 \small
 \begin{tabular}{lcc}
@@ -1825,10 +2034,10 @@ Controls only & 0.897 & 0.897 \\
 
 \begin{table}[pos=htbp]
 \centering
-\caption{Hierarchical regression over the same complete-case records ($n=630$),
+\caption{Hierarchical regression over the same spatial/CAM records ($n=630$),
 with perturbation identity as the initial block. This less stringent
-decomposition is supplementary; Table~\ref{tab:hier_strict} provides the primary
-controlled result.}
+decomposition is supplementary; Table~\ref{tab:primary_controlled} provides the
+primary full-record controlled result.}
 \label{tab:r2}
 \small
 \begin{tabular}{lcc}

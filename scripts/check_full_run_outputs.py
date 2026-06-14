@@ -43,6 +43,23 @@ class CheckResult:
 
 
 STAGE_CSVS: dict[str, list[CsvSpec]] = {
+    "backbone_manifest": [
+        CsvSpec(
+            "backbone_pretrained_manifest.csv",
+            (
+                "backbone",
+                "timm_model_id",
+                "pretrained_tag",
+                "architecture",
+                "paper_img_size",
+                "timm_version",
+                "torch_version",
+                "torchvision_version",
+                "python_version",
+            ),
+            min_rows=7,
+        ),
+    ],
     "exp1": [
         CsvSpec("exp1_accuracy_matrix.csv", ("dataset", "backbone", "perturbation", "accuracy", "drop")),
         CsvSpec("exp1_bootstrap_ci.csv"),
@@ -83,12 +100,25 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
         CsvSpec("exp5_crossmag_asymmetry_by_backbone.csv"),
         CsvSpec("exp5_crossmag_asymmetry_by_pair.csv"),
         CsvSpec("exp5_crossmag_ratio_summary.csv"),
+        CsvSpec("exp5_crossmag_nonmonotonicity.csv"),
         CsvSpec("exp5_crossmag_drift_drop.csv"),
         CsvSpec("exp5_crossmag_asymmetry_summary.csv"),
     ],
     "exp_tierc_cross_source": [
         CsvSpec("exp_tierc_cross_source_by_cell.csv"),
-        CsvSpec("exp_tierc_cross_source_transfer.csv"),
+        CsvSpec(
+            "exp_tierc_cross_source_transfer.csv",
+            (
+                "pair",
+                "direction",
+                "backbone",
+                "cross_source_accuracy",
+                "null_mean_accuracy",
+                "null_ci_low",
+                "null_ci_high",
+                "p_below_null",
+            ),
+        ),
         CsvSpec("exp_tierc_cross_source_by_pair.csv"),
         CsvSpec("exp_tierc_cross_source_summary.csv"),
     ],
@@ -137,7 +167,14 @@ STAGE_CSVS: dict[str, list[CsvSpec]] = {
         CsvSpec("exp7_lodo_feature_drift_summary.csv"),
     ],
     "exp7_controlled_hierarchical": [
+        CsvSpec("exp7_full_record_primary_r2.csv"),
+        CsvSpec("exp7_full_record_partial_correlation.csv"),
         CsvSpec("exp7_controlled_hierarchical_r2.csv"),
+        CsvSpec("exp7_partial_correlations_severity.csv"),
+        CsvSpec("exp7_complete_case_partial_correlation.csv"),
+        CsvSpec("exp7_spatial_cam_selection_summary.csv"),
+        CsvSpec("exp7_spatial_cam_selection_coverage.csv"),
+        CsvSpec("exp7_non_patch_sensitivity.csv"),
     ],
     "exp8": [
         CsvSpec("exp8_detector_auc.csv"),
@@ -534,7 +571,15 @@ def stage_order(cfg: dict, selected: set[str] | None) -> list[str]:
     known = [stage for wave in POST_EXTRACT_WAVES for stage in wave]
     stages = [stage for stage in known if stage in stages] + [stage for stage in stages if stage not in known]
     if selected:
-        stages = [stage for stage in stages if stage in selected]
+        checkable = set(STAGE_CSVS) | set(STAGE_FIGURES)
+        stages = [
+            stage for stage in known
+            if stage in selected and stage in checkable
+        ]
+        stages.extend(sorted(
+            stage for stage in selected
+            if stage in checkable and stage not in stages
+        ))
     return stages
 
 

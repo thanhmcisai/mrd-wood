@@ -109,6 +109,98 @@ def _severity_partial_table(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _standardized_mean_difference(selected: pd.Series, omitted: pd.Series) -> float:
+    selected = selected.astype(float).dropna()
+    omitted = omitted.astype(float).dropna()
+    pooled_var = (
+        (selected.var(ddof=1) + omitted.var(ddof=1)) / 2.0
+    )
+    if not np.isfinite(pooled_var) or pooled_var <= 0:
+        return np.nan
+    return float((selected.mean() - omitted.mean()) / np.sqrt(pooled_var))
+
+
+def _selection_diagnostics(
+    df: pd.DataFrame,
+    common_index: pd.Index,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    profiled = df.copy()
+    profiled["spatial_cam_selected"] = profiled.index.isin(common_index)
+    rows = []
+    selected = profiled[profiled["spatial_cam_selected"]]
+    omitted = profiled[~profiled["spatial_cam_selected"]]
+    for subset_name, subset in [
+        ("all_global_records", profiled),
+        ("spatial_cam_selected", selected),
+        ("spatial_cam_omitted", omitted),
+    ]:
+        rows.append({
+            "subset": subset_name,
+            "n": int(len(subset)),
+            "fraction_of_global_records": float(len(subset) / len(profiled)),
+            "mean_feature_drift": float(subset["feature_drift"].mean()),
+            "mean_accuracy_drop": float(subset["drop"].mean()),
+            "smd_feature_drift_selected_vs_omitted": (
+                _standardized_mean_difference(
+                    selected["feature_drift"], omitted["feature_drift"]
+                )
+                if subset_name == "all_global_records" else np.nan
+            ),
+            "smd_accuracy_drop_selected_vs_omitted": (
+                _standardized_mean_difference(selected["drop"], omitted["drop"])
+                if subset_name == "all_global_records" else np.nan
+            ),
+        })
+
+    coverage = (
+        profiled.groupby(["perturbation", "severity_control"], as_index=False)
+        .agg(
+            n_global=("spatial_cam_selected", "size"),
+            n_spatial_cam=("spatial_cam_selected", "sum"),
+        )
+    )
+    coverage["coverage_fraction"] = (
+        coverage["n_spatial_cam"] / coverage["n_global"]
+    )
+    return pd.DataFrame(rows), coverage
+
+
+def _subset_primary_sensitivity(
+    df: pd.DataFrame,
+    *,
+    subset_name: str,
+    subset_query: str,
+) -> pd.DataFrame:
+    """Primary drift model on a named subset used for leakage sensitivity."""
+    sub = df.query(subset_query).copy()
+    sub_base_cat = ["backbone", "perturbation", "severity_control"]
+    if sub["dataset"].nunique() > 1:
+        sub_base_cat = ["dataset", *sub_base_cat]
+    base_r2, base_n = _fit_r2(sub, "drop", sub_base_cat, [])
+    drift_r2, drift_n = _fit_r2(sub, "drop", sub_base_cat, ["feature_drift"])
+    if base_n != drift_n:
+        raise RuntimeError(
+            f"{subset_name} sensitivity models use different samples: "
+            f"{base_n} versus {drift_n}"
+        )
+    partial_r, partial_p, partial_n = _partial_correlation(
+        sub, "feature_drift", sub_base_cat
+    )
+    return pd.DataFrame([{
+        "subset": subset_name,
+        "dataset_filter": subset_query,
+        "controls": "+".join(sub_base_cat),
+        "base_r2": base_r2,
+        "drift_r2": drift_r2,
+        "delta_r2": drift_r2 - base_r2,
+        "partial_r": partial_r,
+        "partial_p": partial_p,
+        "n": partial_n,
+        "n_datasets": int(sub["dataset"].nunique()),
+        "datasets": ",".join(sorted(sub["dataset"].astype(str).unique())),
+    }])
+
+
 def run(save: bool = True) -> pd.DataFrame:
     input_path = require_csv("exp6_multilevel_table.csv")
     df = pd.read_csv(input_path)
@@ -135,6 +227,33 @@ def run(save: bool = True) -> pd.DataFrame:
     common_cols = ['drop'] + base_cat + full_numeric
     common = df[common_cols].replace([np.inf, -np.inf], np.nan).dropna().copy()
 
+    full_base_r2, full_base_n = _fit_r2(df, "drop", base_cat, [])
+    full_drift_r2, full_drift_n = _fit_r2(
+        df, "drop", base_cat, ["feature_drift"]
+    )
+    if full_base_n != full_drift_n:
+        raise RuntimeError(
+            "Full-record primary models use different samples: "
+            f"{full_base_n} versus {full_drift_n}"
+        )
+    full_partial_r, full_partial_p, full_partial_n = _partial_correlation(
+        df, "feature_drift", base_cat
+    )
+    full_primary = pd.DataFrame([
+        {
+            "model": "P0: dataset+backbone+perturbation+severity",
+            "r2": full_base_r2,
+            "delta_r2": full_base_r2,
+            "n": full_base_n,
+        },
+        {
+            "model": "P1: + feature drift",
+            "r2": full_drift_r2,
+            "delta_r2": full_drift_r2 - full_base_r2,
+            "n": full_drift_n,
+        },
+    ])
+
     rows = []
     prev = 0.0
     for label, nums in specs:
@@ -153,24 +272,79 @@ def run(save: bool = True) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     partial = _severity_partial_table(df)
+    complete_partial_r, complete_partial_p, complete_partial_n = (
+        _partial_correlation(common, "feature_drift", base_cat)
+    )
+    complete_partial = pd.DataFrame([{
+        "metric": "feature_drift",
+        "r_partial_complete_case": complete_partial_r,
+        "p_partial_complete_case": complete_partial_p,
+        "n": complete_partial_n,
+        "controls": "+".join(base_cat),
+        "subset": "complete_case_for_M0_to_M4",
+    }])
+    full_partial = pd.DataFrame([{
+        "metric": "feature_drift",
+        "r_partial_full_record": full_partial_r,
+        "p_partial_full_record": full_partial_p,
+        "n": full_partial_n,
+        "controls": "+".join(base_cat),
+        "subset": "all_records_with_global_geometry",
+    }])
+    selection_summary, selection_coverage = _selection_diagnostics(
+        df, common.index
+    )
+    non_patch_sensitivity = _subset_primary_sensitivity(
+        df,
+        subset_name="WRD25_only_non_patch_sensitivity",
+        subset_query="dataset == 'WRD25'",
+    )
     if save:
+        full_primary.to_csv(
+            V4_CSV / "exp7_full_record_primary_r2.csv", index=False
+        )
+        full_partial.to_csv(
+            V4_CSV / "exp7_full_record_partial_correlation.csv", index=False
+        )
         out.to_csv(V4_CSV / 'exp7_controlled_hierarchical_r2.csv', index=False)
         partial.to_csv(
             V4_CSV / "exp7_partial_correlations_severity.csv", index=False
         )
+        complete_partial.to_csv(
+            V4_CSV / "exp7_complete_case_partial_correlation.csv", index=False
+        )
+        selection_summary.to_csv(
+            V4_CSV / "exp7_spatial_cam_selection_summary.csv", index=False
+        )
+        selection_coverage.to_csv(
+            V4_CSV / "exp7_spatial_cam_selection_coverage.csv", index=False
+        )
+        non_patch_sensitivity.to_csv(
+            V4_CSV / "exp7_non_patch_sensitivity.csv", index=False
+        )
         write_provenance(
             "exp7_controlled_hierarchical",
             [
+                V4_CSV / "exp7_full_record_primary_r2.csv",
+                V4_CSV / "exp7_full_record_partial_correlation.csv",
                 V4_CSV / "exp7_controlled_hierarchical_r2.csv",
                 V4_CSV / "exp7_partial_correlations_severity.csv",
+                V4_CSV / "exp7_complete_case_partial_correlation.csv",
+                V4_CSV / "exp7_spatial_cam_selection_summary.csv",
+                V4_CSV / "exp7_spatial_cam_selection_coverage.csv",
+                V4_CSV / "exp7_non_patch_sensitivity.csv",
             ],
-            protocol="metadata_and_categorical_severity_controls_v1",
+            protocol="metadata_and_categorical_severity_controls_v2",
             parameters={
                 "categorical_controls": [
                     "dataset", "backbone", "perturbation", "severity"
                 ],
                 "residualization": "one_hot_linear_regression",
                 "complete_case_hierarchy": True,
+                "complete_case_partial_correlation": True,
+                "full_record_primary_model": True,
+                "spatial_cam_selection_diagnostics": True,
+                "non_patch_sensitivity": "WRD25_only",
             },
             inputs=[input_path],
         )

@@ -1,0 +1,2 @@
+subset,dataset_filter,controls,base_r2,drift_r2,delta_r2,partial_r,partial_p,n,n_datasets,datasets
+WRD25_only_non_patch_sensitivity,dataset == 'WRD25',backbone+perturbation+severity_control,0.9320474985163776,0.958216030524127,0.02616853200774938,0.6164588158383782,5.347901143231243e-57,532,1,WRD25

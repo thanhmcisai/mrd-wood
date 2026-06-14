@@ -50,18 +50,109 @@ def _output_dirs() -> tuple[Path, Path]:
     return csv_dir(), figure_dir()
 
 
+def _bootstrap_corr_ci(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    seed: int = 42,
+    reps: int = 10_000,
+) -> tuple[float, float]:
+    rng = np.random.default_rng(seed)
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    n = len(x)
+    vals = []
+    for _ in range(reps):
+        idx = rng.integers(0, n, n)
+        xb = x[idx]
+        yb = y[idx]
+        if np.std(xb) <= 1e-12 or np.std(yb) <= 1e-12:
+            continue
+        vals.append(float(np.corrcoef(xb, yb)[0, 1]))
+    if not vals:
+        return np.nan, np.nan
+    lo, hi = np.quantile(vals, [0.025, 0.975])
+    return float(lo), float(hi)
+
+
+def _bootstrap_mean_ci(values: np.ndarray, *, seed: int = 42, reps: int = 10_000):
+    rng = np.random.default_rng(seed)
+    values = np.asarray(values, dtype=float)
+    boot = values[rng.integers(0, len(values), size=(reps, len(values)))].mean(axis=1)
+    lo, hi = np.quantile(boot, [0.025, 0.975])
+    return float(lo), float(hi)
+
+
 def _load_saved_tables(csv_path: Path) -> dict[str, pd.DataFrame]:
     names = {
         "by_backbone": "exp5_crossmag_asymmetry_by_backbone.csv",
         "by_pair": "exp5_crossmag_asymmetry_by_pair.csv",
         "by_ratio": "exp5_crossmag_ratio_summary.csv",
+        "nonmonotonicity": "exp5_crossmag_nonmonotonicity.csv",
         "drift_drop": "exp5_crossmag_drift_drop.csv",
         "summary": "exp5_crossmag_asymmetry_summary.csv",
     }
-    return {
+    tables = {
         key: pd.read_csv(csv_path / name)
         for key, name in names.items()
+        if (csv_path / name).exists()
     }
+    if "nonmonotonicity" not in tables and "by_backbone" in tables:
+        tables["nonmonotonicity"] = _nonmonotonicity_from_by_backbone(
+            tables["by_backbone"]
+        )
+    dd = tables["drift_drop"].dropna(
+        subset=["centroid_drift", "accuracy_drop"]
+    )
+    if len(dd) >= 3:
+        x = dd["centroid_drift"].to_numpy(dtype=float)
+        y = dd["accuracy_drop"].to_numpy(dtype=float)
+        slope, intercept = np.polyfit(x, y, 1)
+        ci_low, ci_high = _bootstrap_corr_ci(x, y)
+        tables["summary"] = pd.DataFrame([{
+            "crossmag_slope": float(slope),
+            "crossmag_intercept": float(intercept),
+            "crossmag_drift_drop_r": float(np.corrcoef(x, y)[0, 1]),
+            "crossmag_drift_drop_r_ci_low": ci_low,
+            "crossmag_drift_drop_r_ci_high": ci_high,
+            "bootstrap_reps": 10000,
+            "bootstrap_seed": 42,
+            "drift_metric": "class_centroid_distributional_drift",
+            "n_crossmag_records": int(len(dd)),
+            "n_crossmag_missing_drift": int(
+                tables["drift_drop"]["centroid_drift"].isna().sum()
+            ),
+        }])
+    return tables
+
+
+def _nonmonotonicity_from_by_backbone(by_backbone: pd.DataFrame) -> pd.DataFrame:
+    required = {"backbone", "mag_pair", "acc_coarse_to_fine", "acc_fine_to_coarse"}
+    if not required.issubset(by_backbone.columns):
+        return pd.DataFrame()
+    if not {"x10<->x50", "x20<->x50"}.issubset(set(by_backbone["mag_pair"])):
+        return pd.DataFrame()
+    wide = by_backbone.pivot(index="backbone", columns="mag_pair")
+    x1050 = (
+        wide["acc_coarse_to_fine"]["x10<->x50"]
+        + wide["acc_fine_to_coarse"]["x10<->x50"]
+    ) / 2.0
+    x2050 = (
+        wide["acc_coarse_to_fine"]["x20<->x50"]
+        + wide["acc_fine_to_coarse"]["x20<->x50"]
+    ) / 2.0
+    paired_diff = (x1050 - x2050).dropna().to_numpy(dtype=float)
+    diff_ci_low, diff_ci_high = _bootstrap_mean_ci(paired_diff)
+    return pd.DataFrame([{
+        "comparison": "x10<->x50_minus_x20<->x50",
+        "mean_difference": float(paired_diff.mean()),
+        "ci_low": diff_ci_low,
+        "ci_high": diff_ci_high,
+        "bootstrap_unit": "backbone",
+        "bootstrap_reps": 10000,
+        "interpretation": "positive_supports_non_monotone_x50_locus",
+        "n_backbones": int(len(paired_diff)),
+    }])
 
 
 def _centroids(features: np.ndarray, labels: np.ndarray) -> dict:
@@ -143,7 +234,7 @@ def _pair_name(a: str, b: str) -> str:
     return f"{MAG_LABEL[vals[0]]}<->{MAG_LABEL[vals[1]]}"
 
 
-def _build_tables(acc: pd.DataFrame, drifts: pd.DataFrame, tier_csv: Path) -> dict[str, pd.DataFrame]:
+def _build_tables(acc: pd.DataFrame, drifts: pd.DataFrame) -> dict[str, pd.DataFrame]:
     acc = acc.copy()
     acc["is_cross"] = acc["train_mag"] != acc["test_mag"]
     within = acc[~acc["is_cross"]][["backbone", "train_mag", "accuracy"]].rename(
@@ -230,20 +321,52 @@ def _build_tables(acc: pd.DataFrame, drifts: pd.DataFrame, tier_csv: Path) -> di
     # Non-monotonicity by ratio: average bidirectional transfer per unordered pair.
     ratio_rows = []
     for pair, sub in by_backbone.groupby("mag_pair"):
+        bidirectional = (
+            sub["acc_coarse_to_fine"].to_numpy(dtype=float)
+            + sub["acc_fine_to_coarse"].to_numpy(dtype=float)
+        ) / 2.0
+        ci_low, ci_high = _bootstrap_mean_ci(bidirectional)
         ratio_rows.append({
             "mag_pair": pair,
             "ratio": float(sub["ratio"].iloc[0]),
-            "mean_bidirectional_accuracy": float(
-                pd.concat([sub["acc_coarse_to_fine"], sub["acc_fine_to_coarse"]]).mean()
-            ),
+            "mean_bidirectional_accuracy": float(bidirectional.mean()),
+            "bidirectional_ci_low": ci_low,
+            "bidirectional_ci_high": ci_high,
             "mean_abs_asymmetry": float(sub["signed_asymmetry"].abs().mean()),
         })
     by_ratio = pd.DataFrame(ratio_rows).sort_values("ratio")
+    ratio_map = {
+        row["mag_pair"]: row
+        for _, row in by_ratio.set_index("mag_pair", drop=False).iterrows()
+    }
+    nonmono_rows = []
+    if "x10<->x50" in ratio_map and "x20<->x50" in ratio_map:
+        wide = by_backbone.pivot(index="backbone", columns="mag_pair")
+        x1050 = (
+            wide["acc_coarse_to_fine"]["x10<->x50"]
+            + wide["acc_fine_to_coarse"]["x10<->x50"]
+        ) / 2.0
+        x2050 = (
+            wide["acc_coarse_to_fine"]["x20<->x50"]
+            + wide["acc_fine_to_coarse"]["x20<->x50"]
+        ) / 2.0
+        paired_diff = (x1050 - x2050).dropna().to_numpy(dtype=float)
+        diff_ci_low, diff_ci_high = _bootstrap_mean_ci(paired_diff)
+        nonmono_rows.append({
+            "comparison": "x10<->x50_minus_x20<->x50",
+            "mean_difference": float(paired_diff.mean()),
+            "ci_low": diff_ci_low,
+            "ci_high": diff_ci_high,
+            "bootstrap_unit": "backbone",
+            "bootstrap_reps": 10000,
+            "interpretation": "positive_supports_non_monotone_x50_locus",
+            "n_backbones": int(len(paired_diff)),
+        })
+    nonmono = pd.DataFrame(nonmono_rows)
 
-    # Tier-A drift/drop line and cross-mag comparison.
-    tier = pd.read_csv(tier_csv) if tier_csv.exists() else pd.DataFrame()
-    if not tier.empty and "accuracy_drop" not in tier.columns and "drop" in tier.columns:
-        tier = tier.rename(columns={"drop": "accuracy_drop"})
+    # Cross-magnification drift/drop relation. This uses class-centroid
+    # distributional drift and is intentionally not slope-compared with the
+    # paired Tier-A feature-drift regression.
     summary_rows = []
     cross_valid = cross.dropna(subset=["centroid_drift", "accuracy_drop"])
     if len(cross_valid) >= 3:
@@ -251,37 +374,26 @@ def _build_tables(acc: pd.DataFrame, drifts: pd.DataFrame, tier_csv: Path) -> di
         cross_y = cross_valid["accuracy_drop"].to_numpy(dtype=float)
         cross_slope, cross_intercept = np.polyfit(cross_x, cross_y, 1)
         cross_r = float(np.corrcoef(cross_x, cross_y)[0, 1])
+        ci_low, ci_high = _bootstrap_corr_ci(cross_x, cross_y)
         row = {
-            "tier_a_csv": str(tier_csv),
-            "tier_a_available": False,
-            "tier_a_slope": np.nan,
-            "tier_a_intercept": np.nan,
             "crossmag_slope": float(cross_slope),
             "crossmag_intercept": float(cross_intercept),
             "crossmag_drift_drop_r": cross_r,
-            "crossmag_to_tier_a_slope_ratio": np.nan,
-            "crossmag_mean_abs_residual_on_tier_a_line": np.nan,
+            "crossmag_drift_drop_r_ci_low": ci_low,
+            "crossmag_drift_drop_r_ci_high": ci_high,
+            "bootstrap_reps": 10000,
+            "bootstrap_seed": 42,
+            "drift_metric": "class_centroid_distributional_drift",
             "n_crossmag_records": int(len(cross_valid)),
             "n_crossmag_missing_drift": int(cross["centroid_drift"].isna().sum()),
         }
-        if not tier.empty and {"feature_drift", "accuracy_drop"}.issubset(tier.columns):
-            tier_x = tier["feature_drift"].to_numpy(dtype=float)
-            tier_y = tier["accuracy_drop"].to_numpy(dtype=float)
-            tier_slope, tier_intercept = np.polyfit(tier_x, tier_y, 1)
-            pred = tier_slope * cross_x + tier_intercept
-            row.update({
-                "tier_a_available": True,
-                "tier_a_slope": float(tier_slope),
-                "tier_a_intercept": float(tier_intercept),
-                "crossmag_to_tier_a_slope_ratio": float(cross_slope / tier_slope) if tier_slope else np.nan,
-                "crossmag_mean_abs_residual_on_tier_a_line": float(np.mean(np.abs(cross_y - pred))),
-            })
         summary_rows.append(row)
     summary = pd.DataFrame(summary_rows)
     return {
         "by_backbone": by_backbone,
         "by_pair": by_pair,
         "by_ratio": by_ratio,
+        "nonmonotonicity": nonmono,
         "drift_drop": cross,
         "summary": summary,
     }
@@ -336,8 +448,7 @@ def run(real: bool = True, save: bool = True) -> dict[str, pd.DataFrame]:
     mags = [m for m in TIER_C if m in set(acc["train_mag"]).union(acc["test_mag"])]
     backbones = [b for b in BB_ORDER if b in set(acc["backbone"])]
     drifts = _load_centroid_drifts(backbones, mags) if real else _demo_drifts(acc)
-    tier_csv = _find_csv("exp1b_feature_geometry.csv", csv_dir)
-    tables = _build_tables(acc, drifts, tier_csv)
+    tables = _build_tables(acc, drifts)
 
     if save:
         csv_dir.mkdir(parents=True, exist_ok=True)
@@ -345,6 +456,7 @@ def run(real: bool = True, save: bool = True) -> dict[str, pd.DataFrame]:
         tables["by_backbone"].to_csv(csv_dir / "exp5_crossmag_asymmetry_by_backbone.csv", index=False)
         tables["by_pair"].to_csv(csv_dir / "exp5_crossmag_asymmetry_by_pair.csv", index=False)
         tables["by_ratio"].to_csv(csv_dir / "exp5_crossmag_ratio_summary.csv", index=False)
+        tables["nonmonotonicity"].to_csv(csv_dir / "exp5_crossmag_nonmonotonicity.csv", index=False)
         tables["drift_drop"].to_csv(csv_dir / "exp5_crossmag_drift_drop.csv", index=False)
         tables["summary"].to_csv(csv_dir / "exp5_crossmag_asymmetry_summary.csv", index=False)
         _plot(tables, fig_dir / "cross_magnification_asymmetry.png")
@@ -371,6 +483,14 @@ def main():
     if args.from_csv:
         csv_path, fig_path = _output_dirs()
         tables = _load_saved_tables(csv_path)
+        if save:
+            tables["summary"].to_csv(
+                csv_path / "exp5_crossmag_asymmetry_summary.csv", index=False
+            )
+            if "nonmonotonicity" in tables:
+                tables["nonmonotonicity"].to_csv(
+                    csv_path / "exp5_crossmag_nonmonotonicity.csv", index=False
+                )
         _plot(tables, fig_path / "cross_magnification_asymmetry.png")
     else:
         tables = run(real=not args.demo, save=save)
@@ -378,6 +498,9 @@ def main():
     print(tables["by_pair"].round(4).to_string(index=False))
     print("\n=== Ratio summary ===")
     print(tables["by_ratio"].round(4).to_string(index=False))
+    if "nonmonotonicity" in tables and len(tables["nonmonotonicity"]):
+        print("\n=== Non-monotonicity check ===")
+        print(tables["nonmonotonicity"].round(4).to_string(index=False))
     drift_rows = int(tables["drift_drop"]["centroid_drift"].notna().sum()) if "centroid_drift" in tables["drift_drop"] else 0
     print(f"\nDrift rows with centroid_drift: {drift_rows}/{len(tables['drift_drop'])}")
     if len(tables["summary"]):
@@ -391,6 +514,7 @@ def main():
             csv_dir / "exp5_crossmag_asymmetry_by_backbone.csv",
             csv_dir / "exp5_crossmag_asymmetry_by_pair.csv",
             csv_dir / "exp5_crossmag_ratio_summary.csv",
+            csv_dir / "exp5_crossmag_nonmonotonicity.csv",
             csv_dir / "exp5_crossmag_drift_drop.csv",
             csv_dir / "exp5_crossmag_asymmetry_summary.csv",
             fig_dir / "cross_magnification_asymmetry.png",
@@ -407,7 +531,6 @@ def main():
             },
             inputs=[
                 require_csv("exp5_full_crossmag_accuracy.csv"),
-                require_csv("exp1b_feature_geometry.csv"),
             ],
         )
         print(f"\nSaved CSV outputs to {csv_dir}")

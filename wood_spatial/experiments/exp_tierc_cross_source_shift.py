@@ -10,6 +10,7 @@ not paired clean/shifted feature drift.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,32 @@ from wood_spatial.result_io import csv_dir, figure_dir, require_csv
 
 PAIRS = [("BFS46", "FSDM41"), ("DTSR14", "WOODAUTH")]
 K = 5
+DEFAULT_NULL_PERMUTATIONS = 10_000
+
+
+def _bootstrap_corr_ci(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    seed: int = 42,
+    reps: int = 10_000,
+) -> tuple[float, float]:
+    rng = np.random.default_rng(seed)
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    n = len(x)
+    vals = []
+    for _ in range(reps):
+        idx = rng.integers(0, n, n)
+        xb = x[idx]
+        yb = y[idx]
+        if np.std(xb) <= 1e-12 or np.std(yb) <= 1e-12:
+            continue
+        vals.append(float(np.corrcoef(xb, yb)[0, 1]))
+    if not vals:
+        return np.nan, np.nan
+    lo, hi = np.quantile(vals, [0.025, 0.975])
+    return float(lo), float(hi)
 
 
 def _norm(x: np.ndarray) -> np.ndarray:
@@ -313,7 +340,8 @@ def _direction_records(
     backbone: str,
     pair: str,
     direction: str,
-) -> tuple[list[dict], float]:
+    null_permutations: int,
+) -> tuple[list[dict], dict]:
     sp_to_int = {s: i for i, s in enumerate(species)}
     gX, gy, qX, qy = [], [], [], []
     for s in species:
@@ -327,6 +355,26 @@ def _direction_records(
     qy = np.asarray(qy)
     pred = _knn_predict(gX, gy, qX)
     overall_acc = float(np.mean(pred == qy))
+    seed_text = f"{backbone}|{pair}|{direction}|{null_permutations}"
+    seed = int.from_bytes(
+        hashlib.sha256(seed_text.encode("utf-8")).digest()[:8], "little"
+    )
+    rng = np.random.default_rng(seed)
+    null_accuracy = np.empty(null_permutations, dtype=float)
+    for i in range(null_permutations):
+        null_accuracy[i] = np.mean(pred == rng.permutation(qy))
+    null_summary = {
+        "cross_source_accuracy": overall_acc,
+        "null_permutations": int(null_permutations),
+        "null_seed": int(seed),
+        "null_mean_accuracy": float(null_accuracy.mean()),
+        "null_ci_low": float(np.quantile(null_accuracy, 0.025)),
+        "null_ci_high": float(np.quantile(null_accuracy, 0.975)),
+        "p_below_null": float(
+            (1 + np.count_nonzero(null_accuracy <= overall_acc))
+            / (null_permutations + 1)
+        ),
+    }
 
     within = _within_recall(feats_src, species)
     rows = []
@@ -354,25 +402,7 @@ def _direction_records(
             "n_source": int(len(feats_src[s])),
             "n_target": int(len(feats_dst[s])),
         })
-    return rows, overall_acc
-
-
-def _tier_a_line(csv_dir: Path) -> tuple[float, float, bool, str]:
-    path = _find_csv("exp1b_feature_geometry.csv", csv_dir)
-    if not path.exists():
-        return np.nan, np.nan, False, str(path)
-    df = pd.read_csv(path)
-    if "accuracy_drop" not in df.columns and "drop" in df.columns:
-        df = df.rename(columns={"drop": "accuracy_drop"})
-    if not {"feature_drift", "accuracy_drop"}.issubset(df.columns):
-        return np.nan, np.nan, False, str(path)
-    x = df["feature_drift"].to_numpy(dtype=float)
-    y = df["accuracy_drop"].to_numpy(dtype=float)
-    ok = np.isfinite(x) & np.isfinite(y)
-    if ok.sum() < 3:
-        return np.nan, np.nan, False, str(path)
-    slope, intercept = np.polyfit(x[ok], y[ok], 1)
-    return float(slope), float(intercept), True, str(path)
+    return rows, null_summary
 
 
 def _demo(table: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -408,12 +438,21 @@ def _demo(table: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                     "direction": f"{src}->{dst}",
                     "backbone": bb,
                     "cross_source_accuracy": float(np.mean(accs)),
+                    "null_permutations": 0,
+                    "null_seed": np.nan,
+                    "null_mean_accuracy": 1.0 / max(len(species), 1),
+                    "null_ci_low": np.nan,
+                    "null_ci_high": np.nan,
+                    "p_below_null": np.nan,
                     "n_species": len(species),
                 })
     return pd.DataFrame(rows), pd.DataFrame(transfer)
 
 
-def _run_real(table: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _run_real(
+    table: pd.DataFrame,
+    null_permutations: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     rows = []
     transfer = []
     for a, b in PAIRS:
@@ -425,16 +464,17 @@ def _run_real(table: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
             if not species:
                 continue
             for src, dst, fs, fd in [(a, b, fa, fb), (b, a, fb, fa)]:
-                recs, acc = _direction_records(
-                    fs, fd, species, bb, f"{a}<->{b}", f"{src}->{dst}"
+                recs, transfer_stats = _direction_records(
+                    fs, fd, species, bb, f"{a}<->{b}", f"{src}->{dst}",
+                    null_permutations,
                 )
                 rows.extend(recs)
                 transfer.append({
                     "pair": f"{a}<->{b}",
                     "direction": f"{src}->{dst}",
                     "backbone": bb,
-                    "cross_source_accuracy": acc,
                     "n_species": len(species),
+                    **transfer_stats,
                 })
             print(f"[done] {a}<->{b} / {bb}: shared_species={len(species)}", flush=True)
     if not rows:
@@ -442,36 +482,45 @@ def _run_real(table: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return pd.DataFrame(rows), pd.DataFrame(transfer)
 
 
-def _summaries(by_cell: pd.DataFrame, transfer: pd.DataFrame, csv_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _summaries(
+    by_cell: pd.DataFrame,
+    transfer: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     x = by_cell["centroid_drift"].to_numpy(dtype=float)
     y = by_cell["accuracy_drop"].to_numpy(dtype=float)
     ok = np.isfinite(x) & np.isfinite(y)
     slope, intercept = np.polyfit(x[ok], y[ok], 1)
     r = float(np.corrcoef(x[ok], y[ok])[0, 1]) if ok.sum() >= 3 else np.nan
-    tier_slope, tier_intercept, tier_ok, tier_csv = _tier_a_line(csv_dir)
-    if tier_ok:
-        pred = tier_slope * x[ok] + tier_intercept
-        residual = float(np.mean(np.abs(y[ok] - pred)))
-        ratio = float(slope / tier_slope) if tier_slope else np.nan
-    else:
-        residual = np.nan
-        ratio = np.nan
+    ci_low, ci_high = (
+        _bootstrap_corr_ci(x[ok], y[ok]) if ok.sum() >= 3 else (np.nan, np.nan)
+    )
+    valid_null = transfer.get(
+        "p_below_null", pd.Series(dtype=float)
+    ).dropna()
     summary = pd.DataFrame([{
-        "tier_a_csv": tier_csv,
-        "tier_a_available": bool(tier_ok),
-        "tier_a_slope": tier_slope,
-        "tier_a_intercept": tier_intercept,
         "crosssource_slope": float(slope),
         "crosssource_intercept": float(intercept),
         "crosssource_drift_drop_r": r,
-        "crosssource_to_tier_a_slope_ratio": ratio,
-        "crosssource_mean_abs_residual_on_tier_a_line": residual,
+        "crosssource_drift_drop_r_ci_low": ci_low,
+        "crosssource_drift_drop_r_ci_high": ci_high,
+        "bootstrap_reps": 10000,
+        "bootstrap_seed": 42,
+        "drift_metric": "class_centroid_distributional_drift",
         "n_crosssource_records": int(ok.sum()),
+        "n_transfer_cells": int(len(transfer)),
+        "permutation_null_status": (
+            "complete" if len(valid_null) == len(transfer) else "pending_rerun"
+        ),
+        "n_cells_below_null_0_05": (
+            int((valid_null < 0.05).sum()) if len(valid_null) else np.nan
+        ),
     }])
 
     means = transfer.groupby(["pair", "direction"], as_index=False).agg(
         mean_cross_source_accuracy=("cross_source_accuracy", "mean"),
         std_cross_source_accuracy=("cross_source_accuracy", "std"),
+        mean_null_accuracy=("null_mean_accuracy", "mean"),
+        max_p_below_null=("p_below_null", "max"),
         n_backbones=("backbone", "nunique"),
         n_species=("n_species", "max"),
     )
@@ -507,8 +556,6 @@ def _plot(by_cell: pd.DataFrame, transfer: pd.DataFrame, summary: pd.DataFrame, 
     xmin, xmax = float(np.nanmin(x)), float(np.nanmax(x))
     xs = np.linspace(max(0, xmin - 0.02), xmax + 0.02, 100)
     row = summary.iloc[0]
-    if bool(row["tier_a_available"]):
-        ax.plot(xs, row["tier_a_slope"] * xs + row["tier_a_intercept"], "k--", lw=1.5, label="Tier-A fit")
     ax.plot(xs, row["crosssource_slope"] * xs + row["crosssource_intercept"], color="#E45756", lw=1.5, label="cross-source fit")
     ax.set_xlabel("distributional feature drift (class-centroid cosine)")
     ax.set_ylabel("accuracy drop")
@@ -516,17 +563,40 @@ def _plot(by_cell: pd.DataFrame, transfer: pd.DataFrame, summary: pd.DataFrame, 
     ax.legend(fontsize=8)
 
     ax = axes[1]
-    means = transfer.groupby(["pair", "direction"], as_index=False)["cross_source_accuracy"].mean()
+    agg = {"cross_source_accuracy": "mean"}
+    has_null = "null_mean_accuracy" in transfer and transfer[
+        "null_mean_accuracy"
+    ].notna().any()
+    if has_null:
+        agg["null_mean_accuracy"] = "mean"
+    means = transfer.groupby(["pair", "direction"], as_index=False).agg(agg)
     labels = [f"{r.pair}: {r.direction}" for _, r in means.iterrows()]
     vals = means["cross_source_accuracy"].to_numpy()
     ax.barh(np.arange(len(vals)), vals, color="#4C78A8")
+    if has_null:
+        ax.scatter(
+            means["null_mean_accuracy"],
+            np.arange(len(vals)),
+            marker="D",
+            s=34,
+            facecolors="white",
+            edgecolors="#E45756",
+            linewidths=1.3,
+            label="label-permutation null mean",
+            zorder=3,
+        )
     ax.set_yticks(np.arange(len(vals)))
     ax.set_yticklabels(labels, fontsize=8)
     ax.set_xlim(0, 1)
     ax.set_xlabel("mean cross-source transfer accuracy")
     ax.set_title("(b) Directed real cross-source transfer")
     for i, v in enumerate(vals):
-        ax.text(v + 0.01, i, f"{v:.3f}", va="center", fontsize=8)
+        label_x = v
+        if has_null:
+            label_x = max(label_x, float(means["null_mean_accuracy"].iloc[i]))
+        ax.text(label_x + 0.012, i, f"{v:.3f}", va="center", fontsize=8)
+    if has_null:
+        ax.legend(fontsize=8, frameon=False, loc="lower right")
 
     fig.tight_layout()
     fig_path.parent.mkdir(parents=True, exist_ok=True)
@@ -542,39 +612,83 @@ def main():
     mode.add_argument("--demo", action="store_true", help="use synthetic demo data")
     mode.add_argument("--check-only", action="store_true", help="check shared species and clean cache mapping without running kNN transfer")
     ap.add_argument("--csv", default="all_public_datasets_standardized.csv", help="standardized public-dataset species CSV")
+    ap.add_argument(
+        "--null-permutations",
+        type=int,
+        default=DEFAULT_NULL_PERMUTATIONS,
+        help="label permutations per backbone and directed transfer cell",
+    )
+    ap.add_argument(
+        "--from-csv",
+        action="store_true",
+        help="regenerate summaries and figures from saved by-cell/transfer CSVs",
+    )
     ap.add_argument("--no-save", action="store_true")
     ap.add_argument("--no-fig", action="store_true")
     args = ap.parse_args()
+    if args.null_permutations < 1000:
+        ap.error("--null-permutations must be at least 1000")
 
     csv_dir, fig_dir = _output_dirs()
     csv_path = _resolve_species_csv(args.csv)
     table = _species_table(csv_path)
     print(f"Species CSV: {csv_path}", flush=True)
-    print(f"Mode: {'check-only' if args.check_only else 'demo' if args.demo else 'real'}", flush=True)
+    print(
+        f"Mode: {'from-csv' if args.from_csv else 'check-only' if args.check_only else 'demo' if args.demo else 'real'}",
+        flush=True,
+    )
     for a, b in PAIRS:
         print(f"Shared species {a}<->{b}: {len(_shared_species(table, a, b))}", flush=True)
 
-    if args.check_only:
+    if args.from_csv:
+        by_cell = pd.read_csv(csv_dir / "exp_tierc_cross_source_by_cell.csv")
+        transfer = pd.read_csv(csv_dir / "exp_tierc_cross_source_transfer.csv")
+        null_defaults = {
+            "null_permutations": 0,
+            "null_seed": np.nan,
+            "null_mean_accuracy": np.nan,
+            "null_ci_low": np.nan,
+            "null_ci_high": np.nan,
+            "p_below_null": np.nan,
+        }
+        for column, default in null_defaults.items():
+            if column not in transfer:
+                transfer[column] = default
+        if transfer["null_permutations"].max() == 0:
+            print(
+                "[warning] saved transfer CSV predates the permutation-null "
+                "protocol; figure regeneration is valid, but run --real to "
+                "produce inferential null results.",
+                flush=True,
+            )
+    elif args.check_only:
         _check_only(table)
         return
     elif args.demo:
         by_cell, transfer = _demo(table)
     else:
-        by_cell, transfer = _run_real(table)
+        by_cell, transfer = _run_real(table, args.null_permutations)
 
-    summary, by_pair = _summaries(by_cell, transfer, csv_dir)
+    summary, by_pair = _summaries(by_cell, transfer)
     print("\n=== Tier-C cross-source summary ===")
     print(summary.to_string(index=False))
     print("\n=== Directional transfer means ===")
-    print(transfer.groupby(["pair", "direction"], as_index=False)["cross_source_accuracy"].mean().to_string(index=False))
+    print(
+        transfer.groupby(["pair", "direction"], as_index=False).agg(
+            observed_accuracy=("cross_source_accuracy", "mean"),
+            permutation_null=("null_mean_accuracy", "mean"),
+            max_p_below_null=("p_below_null", "max"),
+        ).to_string(index=False)
+    )
     print("\n=== Pair asymmetry ===")
     print(by_pair.to_string(index=False))
 
     save = (not args.no_save) and (not args.demo)
     if save:
         csv_dir.mkdir(parents=True, exist_ok=True)
-        by_cell.to_csv(csv_dir / "exp_tierc_cross_source_by_cell.csv", index=False)
-        transfer.to_csv(csv_dir / "exp_tierc_cross_source_transfer.csv", index=False)
+        if not args.from_csv:
+            by_cell.to_csv(csv_dir / "exp_tierc_cross_source_by_cell.csv", index=False)
+            transfer.to_csv(csv_dir / "exp_tierc_cross_source_transfer.csv", index=False)
         by_pair.to_csv(csv_dir / "exp_tierc_cross_source_by_pair.csv", index=False)
         summary.to_csv(csv_dir / "exp_tierc_cross_source_summary.csv", index=False)
         if not args.no_fig:

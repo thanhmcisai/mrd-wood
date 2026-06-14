@@ -1,0 +1,2 @@
+comparison,mean_difference,ci_low,ci_high,bootstrap_unit,bootstrap_reps,interpretation,n_backbones
+x10<->x50_minus_x20<->x50,0.07291208791208792,0.043351648351648356,0.1118681318681319,backbone,10000,positive_supports_non_monotone_x50_locus,7
