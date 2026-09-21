@@ -586,10 +586,6 @@ FIGURE_SOURCES: dict[str, tuple[str, ...]] = {
         "exp_mmd_confound_terms.csv",
         "exp_mmd_confound_summary.csv",
     ),
-    "matched_class_dissociation.png": (
-        "exp_matched_class_dissociation_by_seed.csv",
-        "exp_matched_class_dissociation_summary.csv",
-    ),
     "fig_competitor_switching.png": ("exp_competitor_switching_by_condition.csv",),
 }
 

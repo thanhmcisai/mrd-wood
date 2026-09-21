@@ -308,16 +308,24 @@ def main() -> None:
                 out / "exp_matched_class_dissociation_summary.csv", index=False
             )
             print(f"\nSaved CSV outputs to {out}")
-            if not args.no_fig:
+            has_matched_class_plot = (
+                not tables["by_seed"].empty
+                and tables["by_seed"]["pair"].nunique() >= 2
+            )
+            if not args.no_fig and has_matched_class_plot:
                 figure = _figure_dir() / "matched_class_dissociation.png"
                 make_figure(tables["by_seed"], figure)
                 print(f"Saved figure to {figure}")
+            elif not args.no_fig:
+                print(
+                    "Skipped matched-class figure: requires at least two Tier-C pairs."
+                )
             outputs = [
                 out / "exp_matched_class_dissociation_by_cell.csv",
                 out / "exp_matched_class_dissociation_by_seed.csv",
                 out / "exp_matched_class_dissociation_summary.csv",
             ]
-            if not args.no_fig:
+            if not args.no_fig and has_matched_class_plot:
                 outputs.extend([figure, figure.with_suffix(".pdf")])
             write_provenance(
                 "exp_matched_class_dissociation",

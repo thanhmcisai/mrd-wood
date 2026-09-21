@@ -302,9 +302,6 @@ STAGE_FIGURES: dict[str, list[str]] = {
     "exp_mmd_confound_and_sign": [
         "mmd_confound_and_class_count",
     ],
-    "exp_matched_class_dissociation": [
-        "matched_class_dissociation",
-    ],
     "fig_vn26": [
         "fig4_spatial_cluster_panels_VN26",
         "fig6_cam_cluster_overlay_VN26",
