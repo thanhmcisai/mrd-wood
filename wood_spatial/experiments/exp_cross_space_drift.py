@@ -325,14 +325,15 @@ def make_figure(out, path="cross_space_drift.png"):
     fig, ax = plt.subplots(figsize=(7.2, 6))
     im = ax.imshow(out["matrix"], cmap="viridis", vmin=0, vmax=1, aspect="equal")
     labels = [BB_LABEL.get(b, b) for b in bbs]
-    ax.set_xticks(range(len(bbs))); ax.set_xticklabels([b[:8] for b in labels], rotation=40, ha="right", fontsize=8)
-    ax.set_yticks(range(len(bbs))); ax.set_yticklabels([b[:8] for b in labels], fontsize=8)
+    ax.set_xticks(range(len(bbs))); ax.set_xticklabels([b[:8] for b in labels], rotation=40, ha="right", fontsize=9)
+    ax.set_yticks(range(len(bbs))); ax.set_yticklabels([b[:8] for b in labels], fontsize=9)
     ax.set_xlabel("decision space B (accuracy drop)")
     ax.set_ylabel("drift space A (feature drift)")
     for i in range(len(bbs)):
         for j in range(len(bbs)):
             ax.text(j, i, f"{out['matrix'][i,j]:.2f}", ha="center", va="center",
-                    color="white" if out['matrix'][i,j] < 0.6 else "black", fontsize=7)
+                    color="white" if out['matrix'][i,j] < 0.6 else "black",
+                    fontsize=9)
     ax.set_title(
         "Cross-space drift->drop\n"
         f"raw off-diag mean r={out['cross_space_mean_r']:.2f}; "

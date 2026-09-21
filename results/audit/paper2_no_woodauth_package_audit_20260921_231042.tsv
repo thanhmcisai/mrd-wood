@@ -1,0 +1,55 @@
+ok	check	detail
+True	required CSV exists: exp_tierc_cross_source_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_summary.csv"""
+True	required CSV exists: exp_tierc_cross_source_transfer.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_transfer.csv"""
+True	required CSV exists: exp_tierc_cross_source_by_cell.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_by_cell.csv"""
+True	required CSV exists: exp_tierc_cross_source_by_pair.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_by_pair.csv"""
+True	required CSV exists: exp_source_vs_species_probe_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_source_vs_species_probe_summary.csv"""
+True	required CSV exists: exp_source_vs_species_probe_by_backbone.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_source_vs_species_probe_by_backbone.csv"""
+True	required CSV exists: exp_monitor_on_real_shift_scores.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_scores.csv"""
+True	required CSV exists: exp_monitor_on_real_shift_by_condition.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_by_condition.csv"""
+True	required CSV exists: exp_monitor_on_real_shift_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_summary.csv"""
+True	required CSV exists: exp_monitor_severity_dissociation_records.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_records.csv"""
+True	required CSV exists: exp_monitor_severity_dissociation_by_condition.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_by_condition.csv"""
+True	required CSV exists: exp_monitor_severity_dissociation_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_summary.csv"""
+True	required CSV exists: exp_mmd_gamma_sensitivity_records.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_records.csv"""
+True	required CSV exists: exp_mmd_gamma_sensitivity_by_condition.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_by_condition.csv"""
+True	required CSV exists: exp_mmd_gamma_sensitivity_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_summary.csv"""
+True	required CSV exists: exp_mmd_confound_terms.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_terms.csv"""
+True	required CSV exists: exp_mmd_confound_regression.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_regression.csv"""
+True	required CSV exists: exp_mmd_confound_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_summary.csv"""
+True	required CSV exists: exp_mmd_class_count_matched.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_mmd_class_count_matched.csv"""
+True	required CSV exists: exp_matched_class_dissociation_by_cell.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_by_cell.csv"""
+True	required CSV exists: exp_matched_class_dissociation_by_seed.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_by_seed.csv"""
+True	required CSV exists: exp_matched_class_dissociation_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_summary.csv"""
+True	required CSV exists: exp5_crossmag_drift_drop.csv	"""/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_drift_drop.csv"""
+True	required CSV exists: exp5_crossmag_asymmetry_summary.csv	"""/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_asymmetry_summary.csv"""
+True	required CSV exists: exp5_crossmag_asymmetry_by_pair.csv	"""/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_asymmetry_by_pair.csv"""
+True	required CSV exists: exp10_reference_monitor_auc.csv	"""/home/thanh/Wood_Research_git/results/csv/exp10_reference_monitor_auc.csv"""
+True	required CSV exists: exp10_operating_points_fixed_fpr.csv	"""/home/thanh/Wood_Research_git/results/csv/exp10_operating_points_fixed_fpr.csv"""
+True	required figure exists: tierc_cross_source_shift.png	"""/home/thanh/Wood_Research_git/results/figures/tierc_cross_source_shift.png"""
+True	required figure exists: tierc_cross_source_shift.pdf	"""/home/thanh/Wood_Research_git/results/figures/tierc_cross_source_shift.pdf"""
+True	required figure exists: source_vs_species_probe.png	"""/home/thanh/Wood_Research_git/results/figures/source_vs_species_probe.png"""
+True	required figure exists: source_vs_species_probe.pdf	"""/home/thanh/Wood_Research_git/results/figures/source_vs_species_probe.pdf"""
+True	required figure exists: monitor_on_real_shift.png	"""/home/thanh/Wood_Research_git/results/figures/monitor_on_real_shift.png"""
+True	required figure exists: monitor_on_real_shift.pdf	"""/home/thanh/Wood_Research_git/results/figures/monitor_on_real_shift.pdf"""
+True	required figure exists: monitor_severity_dissociation.png	"""/home/thanh/Wood_Research_git/results/figures/monitor_severity_dissociation.png"""
+True	required figure exists: monitor_severity_dissociation.pdf	"""/home/thanh/Wood_Research_git/results/figures/monitor_severity_dissociation.pdf"""
+True	required figure exists: mmd_gamma_sensitivity.png	"""/home/thanh/Wood_Research_git/results/figures/mmd_gamma_sensitivity.png"""
+True	required figure exists: mmd_gamma_sensitivity.pdf	"""/home/thanh/Wood_Research_git/results/figures/mmd_gamma_sensitivity.pdf"""
+True	required figure exists: cross_magnification_asymmetry.png	"""/home/thanh/Wood_Research_git/results/figures/cross_magnification_asymmetry.png"""
+True	required figure exists: cross_magnification_asymmetry.pdf	"""/home/thanh/Wood_Research_git/results/figures/cross_magnification_asymmetry.pdf"""
+True	Tier-C transfer has only BFS46<->FSDM41	"[""BFS46<->FSDM41""]"
+True	Tier-C transfer row count is 14	14
+True	Tier-C directions are BFS/FSDM only	"[""BFS46->FSDM41"", ""FSDM41->BFS46""]"
+True	source-vs-species summary has only BFS46<->FSDM41	"[""BFS46<->FSDM41""]"
+True	monitor real-shift conditions have no WOODAUTH/DTSR14 pair	[]
+True	monitor real-shift condition counts match no-WOODAUTH run	"{""TierB_synth"": 2128, ""TierD_xmag"": 42, ""TierA_clean"": 21, ""TierC_BFS46_FSDM41"": 14}"
+True	MMD gamma policy counts are 77 each	"{""per_pair_median"": 77, ""global_median"": 77, ""global_median_x0.5"": 77, ""global_median_x2.0"": 77}"
+True	MMD gamma conditions have no stale WOODAUTH/DTSR14 pair	[]
+True	MMD confound terms have only BFS46<->FSDM41	"[""BFS46<->FSDM41""]"
+True	MMD confound terms row count is 14	14
+True	exp_mmd_class_count_matched.csv is empty after removing second Tier-C pair	0
+True	exp_matched_class_dissociation_by_cell.csv is empty after removing second Tier-C pair	0
+True	exp_matched_class_dissociation_by_seed.csv is empty after removing second Tier-C pair	0
+True	exp_matched_class_dissociation_summary.csv is empty after removing second Tier-C pair	0
+True	packaged files contain no stale WOODAUTH/DTSR14 terms	[]

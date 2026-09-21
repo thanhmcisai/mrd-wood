@@ -1,0 +1,136 @@
+{
+  "_purpose": "Label corrections for two datasets, for use when revising manuscripts that used earlier versions of them. FSDM41: 40 of 41 class labels were permuted. WOODAUTH: excluded from the corpus; the reason is a property of the public release, not of our pipeline.",
+  "_generated": "2026-09-20",
+  "_decisions": [
+    "D29",
+    "D30",
+    "D37",
+    "D52",
+    "D70",
+    "D71"
+  ],
+  "FSDM41": {
+    "status": "RELABELLED — 40 of 41 classes carried the wrong species name",
+    "source_paper": "Paula Filho, P.L., Oliveira, L.S., Nisgoski, S., Britto Jr., A.S. (2014). Forest species recognition using macroscopic images. Machine Vision and Applications 25(4): 1019-1031. Table 1.",
+    "what_went_wrong": "The copy in circulation was assembled by pairing printed row k of the paper's Table 1 with id-block k of the released files. Table 1 is printed sorted by FAMILY — a presentation order — while the files are numbered in a different order. The result is a clean bijection: every class holds another class's name.",
+    "how_adjudicated": {
+      "method": "per-class image counts published in Table 1; block size is objective",
+      "DS3_labelling_matches": "41/41 (37 exact, 4 after synonym/rank bridging)",
+      "disk_copy_matches": "2/41 — and one of those two is coincidence: Araucaria angustifolia and Brosimum paraense both have 63 images",
+      "independent_content_check": "SIFT+RANSAC on 40 same-id pairs: 40/40 are the same photograph at scale 2.34-2.35. Separately, a conifer/hardwood texture test favours the corrected names: 26/29 vs 3/29."
+    },
+    "apply_when": "Only needed if rebuilding from the ORIGINAL download or an old copy whose folder names were never fixed. If folders on disk already carry the correct names, do not apply this map a second time.",
+    "direction": "key = name as it appears on disk (WRONG)  ->  value = correct species (RIGHT)",
+    "n_overrides": 40,
+    "overrides": {
+      "Aspidosperma polyneuron": "Acrocarpus fraxinifolius",
+      "Araucaria angustifolia": "Brosimum paraense",
+      "Tabebuia sp": "Carapa guianensis",
+      "Cordia goeldiana": "Hymenolobium petraeum",
+      "Cordia sp": "Araucaria angustifolia",
+      "Acrocarpus fraxinifolius": "Mimosa scabrella",
+      "Hymenaea sp": "Myroxylon balsamum",
+      "Peltogyne sp": "Bertholethia excelsa",
+      "Hymenolobium petraeum": "Erisma uncinatum",
+      "Myroxylon balsamum": "Cedrela fissilis",
+      "Dipteryx sp": "Cedrelinga catenaeformis",
+      "Machaerium sp": "Melia azedarach",
+      "Bowdichia sp": "Dipteryx sp",
+      "Mimosa scabrella": "Goupia glabra",
+      "Cedrelinga catenaeformis": "Micropholis venulosa",
+      "Goupia glabra": "Eucalyptus sp",
+      "Ocotea porosa": "Cordia goeldiana",
+      "Mezilaurus itauba": "Pouteria pachycarpa",
+      "Laurus nobilis": "Grevilea robusta",
+      "Bertholethia excelsa": "Ocotea porosa",
+      "Cariniana estrellensis": "Tabebuia sp",
+      "Couratari sp": "Mezilaurus itauba",
+      "Carapa guianensis": "Hymenaea sp",
+      "Cedrela fissilis": "Cariniana estrellensis",
+      "Melia azedarach": "Laurus nobilis",
+      "Swietenia macrophylla": "Machaerium sp",
+      "Brosimum paraense": "Manilkara huberi",
+      "Bagassa guianensis": "Swietenia macrophylla",
+      "Virola surinamensis": "Cordia sp",
+      "Eucalyptus sp": "Euxylophora paraensis",
+      "Pinus sp": "Balfourodendron riedelianum",
+      "Podocarpus lambertii": "Aspidosperma polyneuron",
+      "Grevilea robusta": "Pinus sp",
+      "Balfourodendron riedelianum": "Podocarpus lambertii",
+      "Euxylophora paraensis": "Vochysia sp",
+      "Micropholis venulosa": "Peltogyne sp",
+      "Pouteria pachycarpa": "Bowdichia sp",
+      "Manilkara huberi": "Bagassa guianensis",
+      "Erisma uncinatum": "Couratari sp",
+      "Vochysia sp": "Virola surinamensis"
+    },
+    "consequences_for_a_manuscript": [
+      "2,901 of 2,942 FSDM41 images change species label.",
+      "409 images were on the WRONG SIDE OF THE HARDWOOD/SOFTWOOD DIVISION. The three conifers are blocks 5/34/35; the bad copy had them at 2/32/33. Any hardwood-vs-softwood result computed on the old labels is wrong, not merely noisy.",
+      "The species SET is unchanged — it is a permutation. So per-species attribute coverage is unaffected, but EVERYTHING COMPUTED PER IMAGE must be recomputed: accuracy, confusion matrices, per-class metrics, scale calibration, and any train/test split.",
+      "Three bare genus labels were normalised to the 'X sp.' convention: Pouteria, Anacardium, Pterocarpus."
+    ],
+    "control_other_datasets": "The identical audit PASSES on BFS46 (46/46 counts, 1,901/1,901 images), PCA11 (10/11) and BD11 (11/11) — so the method does not manufacture alarms. GOIMAI, VN26 and WRD25 publish no per-class counts and are therefore UNVERIFIED, not clean."
+  },
+  "WOODAUTH": {
+    "status": "EXCLUDED from the corpus, permanently (not suspended)",
+    "n_images_excluded": 8561,
+    "n_species": 12,
+    "what_it_is": {
+      "composition": "our copy is TWO Zenodo releases merged, and the counts close exactly",
+      "release_A": {
+        "title": "\"WOOD-AUTH\" dataset A",
+        "doi": "10.2018/wood.auth",
+        "year": 2018,
+        "files": 709,
+        "resolution": "400x400",
+        "filename": "<speciesID>_<photo>"
+      },
+      "release_v2": {
+        "title": "Wood Species Dataset",
+        "doi": "10.5281/zenodo.2545611",
+        "year": 2019,
+        "files": 7840,
+        "resolution": "200x200",
+        "filename": "<photo>_<speciesID>"
+      },
+      "stray_files": {
+        "files": 12,
+        "pattern": "<id>_<id> copy.jpg",
+        "resolution": "200x200"
+      },
+      "not_duplicates_of_each_other": "0.6% of release-A files share a file size with any same-species v2 file, against a 14.6% within-v2 chance baseline — FEWER collisions than chance, so different photographs."
+    },
+    "reason_for_exclusion": {
+      "one_sentence": "The public release mixes transverse with tangential/radial sections, encodes the section plane nowhere, the mixture is confirmed by image content, and no content filter can be VALIDATED because no verified longitudinal image exists anywhere in reach.",
+      "filename_encoding": "Both Zenodo descriptions state the filename encodes SPECIES AND PHOTO NUMBER ONLY. There is no section-plane field. This is the publisher's own description, not an inference from the data.",
+      "the_labels_exist_but_are_not_released": "Barmpoutis, P. (2017). Contribution and combination of different wood sections in species recognition using image texture analysis methods. PRO LIGNO 13(4): 557-564. Fig. 4 reports recognition rates SEPARATELY for Cross Sections (68.8% / 79.6%) and Tangential-Radial Sections (66.5% / 68.0%), which is only possible with per-image section labels. The author grouped tangential with radial deliberately, noting that in small images even non-experts struggle to tell them apart. Acquisition: Nikon D3300, 24 MP, 15-20 cm, 400x400.",
+      "content_evidence_of_the_mixture": {
+        "method": "structure-tensor coherence, compared against MATCHED-SPECIES controls in DTSR14 (scanned cores, certainly transverse)",
+        "Fagus_sylvatica": {
+          "woodauth": 0.578,
+          "dtsr14_control": 0.466,
+          "above_control_p99": "50.7%",
+          "note": "clearly bimodal; the high mode 0.55-0.85 has NO counterpart in the control, which stops at 0.60"
+        },
+        "Pinus_sylvestris": {
+          "woodauth": 0.557,
+          "dtsr14_control": 0.526,
+          "above_control_p99": "20.7%"
+        },
+        "Picea_abies": {
+          "woodauth": 0.495,
+          "dtsr14_control": 0.505,
+          "above_control_p99": "6.0%",
+          "note": "NO shift at all — this is the control that rules out a source or resolution artefact"
+        },
+        "limitation": "the statistic separates planes in diffuse-porous hardwood and fails in conifers, whose transverse face is already rows of tracheids; it cannot be used on Picea, Pinus, Cupressus (1,478 images, 17%)"
+      },
+      "why_a_filter_was_not_acceptable": "A classifier seeded on the Fagus bimodality could be checked on its TRANSVERSE side (DTSR14 supplies known-transverse Fagus, Picea and Pinus), but there is NO confirmed longitudinal image to check the other side against. The quantity that matters — how many longitudinal images the filter lets through — is therefore unmeasurable, with no upper bound. Admitting 8,561 images through such a filter would place an unbounded contamination into a corpus where every other number carries a control.",
+      "why_it_matters_for_this_thesis": "Transverse-only is the deployment argument: commercial timber arrives cut, so end grain is the only surface always available without laboratory preparation. A reviewer who reads 'section-filtered by an unvalidated classifier' has a question we cannot answer."
+    },
+    "cost_of_the_exclusion_state_it_openly": "8,561 images, 12 European temperate species, NINE of which appear in no other source in the corpus. This is a real loss and should be reported as such, not omitted.",
+    "reversible_if": "per-image section labels ever become available — the author holds them. Files remain on Drive; restoring takes a day. Note that it would re-enter as TWO scale nodes, since 400x400 and 200x200 from one camera at one distance cannot share a um/px.",
+    "recommended_wording_for_a_manuscript": "WOOD-AUTH was considered and excluded. Its public release does not encode the section plane, and image-content analysis confirms it mixes transverse with longitudinal sections (Fagus sylvatica coherence is bimodal against a matched transverse control, while Picea abies shows no shift). Because no verified longitudinal image was available, the leak-through rate of any content-based filter could not be bounded, so the dataset was excluded rather than filtered."
+  }
+}

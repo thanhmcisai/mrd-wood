@@ -19,6 +19,10 @@ from wood_spatial.config import (
     BACKBONE_CONFIGS, V2_CACHE_DIR, V4_FEAT_CACHE, V4_SPATIAL_CACHE,
     BATCH_SIZE, NUM_WORKERS, FP16, RANDOM_SEED,
 )
+from wood_spatial.core.label_corrections import (
+    apply_cache_label_correction,
+    correction_marker_for_dataset,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +76,20 @@ def load_cache(backbone_id: str, dataset_name: str, tag: str = 'original'):
     v4_path = get_cache_path(backbone_id, dataset_name, tag)
     if v4_path.exists():
         d = _load_npz_checked(v4_path)
-        return d['features'], d['labels'], d['paths']
+        labels, paths = apply_cache_label_correction(
+            dataset_name, d['labels'], d['paths'], set(d.files)
+        )
+        return d['features'], labels, paths
 
     # Try v2 fallback
     v2_path = get_v2_cache_path(backbone_id, dataset_name, tag)
     if v2_path.exists():
         logger.debug('Using v2 cache: %s', v2_path.name)
         d = _load_npz_checked(v2_path)
-        return d['features'], d['labels'], d['paths']
+        labels, paths = apply_cache_label_correction(
+            dataset_name, d['labels'], d['paths'], set(d.files)
+        )
+        return d['features'], labels, paths
 
     raise FileNotFoundError(
         f'Cache not found for {backbone_id}/{dataset_name}/{tag}. '
@@ -105,7 +115,12 @@ def save_cache(
 ):
     """Save feature cache to v4 directory."""
     save_path = get_cache_path(backbone_id, dataset_name, tag)
-    np.savez_compressed(save_path, features=features, labels=labels, paths=paths)
+    payload = {"features": features, "labels": labels, "paths": paths}
+    marker = correction_marker_for_dataset(dataset_name)
+    if marker is not None:
+        key, value = marker
+        payload[key] = value
+    np.savez_compressed(save_path, **payload)
     logger.info('Saved cache: %s (%d samples, %d-dim)',
                 save_path.name, len(features), features.shape[1])
 
@@ -195,7 +210,10 @@ def load_spatial_cache(backbone_id: str, dataset_name: str, tag: str = 'original
     features = d['features']
     if features.ndim == 4 and features.shape[-1] > features.shape[1]:
         features = features.transpose(0, 3, 1, 2)
-    return features, d['labels'], d['paths']
+    labels, paths = apply_cache_label_correction(
+        dataset_name, d['labels'], d['paths'], set(d.files)
+    )
+    return features, labels, paths
 
 
 def save_spatial_cache(
@@ -214,12 +232,12 @@ def save_spatial_cache(
     save_path = get_spatial_cache_path(backbone_id, dataset_name, tag)
     # Stack into 4D array — all images from same backbone have identical spatial dims
     features_arr = np.stack(features, axis=0)  # (N, C, H_f, W_f)
-    np.savez_compressed(
-        save_path,
-        features=features_arr,
-        labels=labels,
-        paths=paths,
-    )
+    payload = {"features": features_arr, "labels": labels, "paths": paths}
+    marker = correction_marker_for_dataset(dataset_name)
+    if marker is not None:
+        key, value = marker
+        payload[key] = value
+    np.savez_compressed(save_path, **payload)
     logger.info('Saved spatial cache: %s (%d samples, shape=%s)',
                 save_path.name, len(features), features_arr.shape)
 

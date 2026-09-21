@@ -20,7 +20,7 @@ from wood_spatial.config import ALL_DATASETS, V4_CSV
 
 DEFAULT_DATASETS = [
     "WRD25", "DTSR14", "PCA11",
-    "BFS46", "FSDM41", "GOIMAI", "WOODAUTH", "BD11",
+    "BFS46", "FSDM41", "GOIMAI", "BD11",
     "VN26_x10", "VN26_x20", "VN26_x50",
 ]
 

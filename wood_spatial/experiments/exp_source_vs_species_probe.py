@@ -248,57 +248,82 @@ def _summarize(rows: pd.DataFrame) -> pd.DataFrame:
 
 
 def _plot(rows: pd.DataFrame, summary: pd.DataFrame, fig_path: Path) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(10.8, 4.0))
-    pairs = summary["pair"].tolist()
-    x = np.arange(len(pairs))
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(11.2, 4.8),
+        gridspec_kw={"width_ratios": [1.25, 1.0]},
+    )
+    plot_rows = rows.copy()
+    plot_rows["backbone_label"] = plot_rows["backbone"].map(BB_LABEL).fillna(plot_rows["backbone"])
+    plot_rows["_order"] = plot_rows["backbone"].map({bb: i for i, bb in enumerate(BB_ORDER)})
+    plot_rows = plot_rows.sort_values("_order")
 
     ax = axes[0]
-    width = 0.36
-    ax.bar(
-        x - width / 2,
-        summary["source_acc_leave_one_species_out_mean"],
-        width,
-        yerr=summary["source_acc_leave_one_species_out_std"],
-        capsize=3,
-        label="held-out-species source accuracy",
-        color="#4C78A8",
-    )
-    ax.bar(
-        x + width / 2,
-        summary["cross_source_species_acc_mean"],
-        width,
-        yerr=summary["cross_source_species_acc_std"],
-        capsize=3,
-        label="cross-source species accuracy",
-        color="#E45756",
-    )
-    for i, n_species in enumerate(summary["n_species"].astype(float)):
-        ax.hlines(0.5, x[i] - width, x[i], color="#555555", ls="--", lw=1.2)
-        ax.hlines(
-            1.0 / n_species,
-            x[i],
-            x[i] + width,
-            color="#555555",
-            ls="--",
-            lw=1.2,
-            label="task-specific chance" if i == 0 else None,
+    y = np.arange(len(plot_rows))
+    for yi, row in zip(y, plot_rows.itertuples(index=False)):
+        ax.plot(
+            [row.source_acc_leave_one_species_out, row.cross_source_species_acc],
+            [yi, yi],
+            color="#9AA3AD",
+            lw=1.4,
+            zorder=1,
         )
-    ax.set_xticks(x)
-    ax.set_xticklabels(pairs, rotation=15, ha="right")
-    ax.set_ylim(0, 1.05)
-    ax.set_ylabel("nearest-centroid accuracy")
-    ax.set_title("(a) Source signature transfers to held-out species")
-    ax.legend(fontsize=8)
+    ax.scatter(
+        plot_rows["source_acc_leave_one_species_out"],
+        y,
+        s=58,
+        color="#4C78A8",
+        edgecolor="white",
+        linewidth=0.7,
+        label="source identity, held-out species",
+        zorder=3,
+    )
+    ax.scatter(
+        plot_rows["cross_source_species_acc"],
+        y,
+        s=58,
+        color="#E45756",
+        edgecolor="white",
+        linewidth=0.7,
+        label="species transfer, cross-source",
+        zorder=3,
+    )
+    n_species = float(summary["n_species"].iloc[0])
+    ax.axvline(0.5, color="#4C78A8", ls=":", lw=1.1, alpha=0.7)
+    ax.axvline(1.0 / n_species, color="#E45756", ls=":", lw=1.1, alpha=0.7)
+    ax.set_yticks(y)
+    ax.set_yticklabels(plot_rows["backbone_label"])
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1.03)
+    ax.set_xlabel("nearest-centroid accuracy")
+    ax.set_title("(a) Source remains separable while species transfer drops")
+    ax.grid(axis="x", color="#E5E7EB", lw=0.7)
+    ax.legend(
+        fontsize=8,
+        loc="upper center",
+        bbox_to_anchor=(0.55, -0.16),
+        ncol=2,
+        frameon=False,
+    )
+    ax.text(0.505, len(plot_rows) - 0.15, "source chance", fontsize=7, color="#4C78A8", rotation=90, va="bottom")
+    ax.text(1.0 / n_species + 0.006, len(plot_rows) - 0.15, "species chance", fontsize=7, color="#E45756", rotation=90, va="bottom")
 
     ax = axes[1]
-    ax.bar(x, summary["source_to_species_ratio_mean"], color="#72B7B2")
-    ax.axhline(1.0, color="k", ls="--", lw=1.1)
-    ax.set_xticks(x)
-    ax.set_xticklabels(pairs, rotation=15, ha="right")
-    ax.set_ylabel("between-source / between-species distance")
+    colors = plt.cm.viridis(np.linspace(0.20, 0.82, len(plot_rows)))
+    ax.barh(y, plot_rows["source_to_species_ratio"], color=colors, edgecolor="white", linewidth=0.6)
+    ax.axvline(1.0, color="k", ls="--", lw=1.1)
+    ax.set_yticks(y)
+    ax.set_yticklabels([])
+    ax.invert_yaxis()
+    ax.set_xlabel("between-source / between-species distance")
     ax.set_title("(b) Source gap relative to species geometry")
+    ax.grid(axis="x", color="#E5E7EB", lw=0.7)
+    for yi, value in zip(y, plot_rows["source_to_species_ratio"]):
+        ax.text(value + 0.012, yi, f"{value:.2f}", va="center", fontsize=8)
+    ax.set_xlim(0, max(1.05, float(plot_rows["source_to_species_ratio"].max()) + 0.12))
 
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.03, 1, 1.0])
     fig_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(fig_path, dpi=180, bbox_inches="tight")
     fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")

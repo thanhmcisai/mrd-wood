@@ -7,8 +7,8 @@
   },
   "datasets": {
     "tier_a": ["WRD25", "DTSR14", "PCA11"],
-    "tier_b": ["BFS46", "FSDM41", "GOIMAI", "WOODAUTH", "BD11"],
-    "tier_c_cross_source": [["BFS46", "FSDM41"], ["DTSR14", "WOODAUTH"]],
+    "tier_b": ["BFS46", "FSDM41", "GOIMAI", "BD11"],
+    "tier_c_cross_source": [["BFS46", "FSDM41"]],
     "tier_d": ["VN26_x10", "VN26_x20", "VN26_x50"]
   },
   "backbones": [
@@ -28,7 +28,6 @@
       "BFS46",
       "FSDM41",
       "GOIMAI",
-      "WOODAUTH",
       "BD11",
       "VN26_x10",
       "VN26_x20",
@@ -41,7 +40,6 @@
       "BFS46",
       "FSDM41",
       "GOIMAI",
-      "WOODAUTH",
       "BD11"
     ],
     "spatial_clean_datasets": [

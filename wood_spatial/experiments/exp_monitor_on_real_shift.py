@@ -35,7 +35,6 @@ CONDITION_ORDER = [
     "TierA_clean",
     "TierB_synth",
     "TierD_xmag",
-    "TierC_DTSR14_WOODAUTH",
     "TierC_BFS46_FSDM41",
 ]
 
@@ -43,7 +42,6 @@ CONDITION_LABEL = {
     "TierA_clean": "Tier-A clean",
     "TierB_synth": "Tier-B synthetic",
     "TierD_xmag": "Tier-D cross-magnification",
-    "TierC_DTSR14_WOODAUTH": "Tier-C DTSR14<->WOODAUTH",
     "TierC_BFS46_FSDM41": "Tier-C BFS46<->FSDM41",
 }
 
@@ -244,7 +242,12 @@ def build_real_scores(species_csv: str, cap: int = 1500, max_tierb_tags: int = 0
                     target = _stack_shared(table, dst, bb, species)
                 except (FileNotFoundError, RuntimeError):
                     continue
-                cond = "TierC_BFS46_FSDM41" if {ds_a, ds_b} == {"BFS46", "FSDM41"} else "TierC_DTSR14_WOODAUTH"
+                cond = f"TierC_{ds_a}_{ds_b}"
+                if {ds_a, ds_b} == {"BFS46", "FSDM41"}:
+                    cond = "TierC_BFS46_FSDM41"
+                if cond not in rank:
+                    rank[cond] = max(rank.values()) + 1
+                    CONDITION_LABEL[cond] = f"Tier-C {ds_a}<->{ds_b}"
                 _add_record(rows, bb, cond, src, dst, "original_shared_species", ref, target, rank[cond], cap)
 
         print(f"[done] {bb}: rows={len([r for r in rows if r['backbone'] == bb])}", flush=True)
@@ -272,8 +275,8 @@ def summarize(scores: pd.DataFrame, threshold: float, threshold_source: str) -> 
     severity = by_condition["severity_rank"].to_numpy(dtype=float)
     rho = _spearman(severity, mean_scores) if len(by_condition) > 1 else np.nan
     clean = scores[scores["condition"] == "TierA_clean"]
-    real = scores[scores["condition"].isin(["TierD_xmag", "TierC_DTSR14_WOODAUTH", "TierC_BFS46_FSDM41"])]
-    tierc = scores[scores["condition"].isin(["TierC_DTSR14_WOODAUTH", "TierC_BFS46_FSDM41"])]
+    real = scores[scores["condition"].eq("TierD_xmag") | scores["condition"].str.startswith("TierC_")]
+    tierc = scores[scores["condition"].str.startswith("TierC_")]
     overall = pd.DataFrame([{
         "monitor": "ref_mmd_rbf",
         "synthetic_threshold": threshold,

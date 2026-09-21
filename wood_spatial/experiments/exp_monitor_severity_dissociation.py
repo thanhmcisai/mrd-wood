@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-exp_monitor_severity_dissociation.py   (Reviewer Major #4)
+exp_monitor_severity_dissociation.py
 ============================================================================
-The reviewer's key negative result: the RBF-MMD monitor DETECTS that a real shift
-happened (it fires on essentially every cross-source batch) but does NOT RANK
-SEVERITY -- and worse, the most catastrophic pair (BFS46<->FSDM41, accuracy ~0.01)
-has a LOWER MMD (0.101) than the milder DTSR14<->WOODAUTH (0.194). So in deployment
-the monitor can UNDER-REACT to the worst case. This must be (i) made a main result,
-(ii) the two notions separated (shift-detection vs failure/severity), and (iii)
-explained mechanistically.
+The RBF-MMD monitor DETECTS that a real shift happened, but it should not be
+interpreted as a calibrated severity score. This script separates shift
+detection from failure ranking and analyzes when distributional distance and
+class-level failure dissociate.
 
 This script measures the dissociation and its mechanism, per condition:
   - mmd            : RBF-MMD monitor score (what the monitor reports)
@@ -58,8 +55,7 @@ CONDITIONS = [
     "TierD_xmag_x10x20",
     "TierD_xmag_x10x50",
     "TierD_xmag_x20x50",
-    "TierC_DTSR14_WOODAUTH",
-    "TierC_BFS46_FSDM41",   # worst collapse, but (observed) lower MMD
+    "TierC_BFS46_FSDM41",
 ]
 
 
@@ -80,7 +76,7 @@ def load_conditions():
                          (1 - mean pairwise cosine within the batch); larger =
                          more dispersed.
     Compute MMD and within-batch spread from the same cached features used elsewhere; failure
-    from the corresponding accuracy. All eight groups use the same capped
+    from the corresponding accuracy. All configured groups use the same capped
     reference-bank score protocol; full-feature Tier-C magnitudes are analyzed
     separately by the MMD confound experiment.
     """
@@ -181,7 +177,10 @@ def load_conditions():
         return np.vstack([feats[s] for s in present])
 
     for _, row in monitor[monitor["condition"].str.startswith("TierC")].iterrows():
-        pair = "BFS46<->FSDM41" if row["condition"] == "TierC_BFS46_FSDM41" else "DTSR14<->WOODAUTH"
+        pair = f"{row['reference_dataset']}<->{row['target_dataset']}"
+        reverse_pair = f"{row['target_dataset']}<->{row['reference_dataset']}"
+        if pair not in tierc_key.index.get_level_values("pair"):
+            pair = reverse_pair
         direction = f"{row['reference_dataset']}->{row['target_dataset']}"
         key = (pair, direction, row["backbone"])
         if key not in tierc_key.index:
@@ -209,7 +208,7 @@ def load_conditions():
     mmd = dict(zip(by_cond["condition"], by_cond["mmd"]))
     failure = dict(zip(by_cond["condition"], by_cond["failure"]))
     compact = dict(zip(by_cond["condition"], by_cond["within_batch_spread"]))
-    required = ["clean_TierA", "TierC_BFS46_FSDM41", "TierC_DTSR14_WOODAUTH"]
+    required = ["clean_TierA", "TierC_BFS46_FSDM41"]
     missing = [c for c in required if c not in mmd or c not in failure or c not in compact]
     if missing:
         raise RuntimeError(
@@ -235,8 +234,7 @@ def make_demo(seed=42):
         "TierD_xmag_x10x20": 0.060,
         "TierD_xmag_x10x50": 0.110,
         "TierD_xmag_x20x50": 0.140,
-        "TierC_DTSR14_WOODAUTH": 0.196,
-        "TierC_BFS46_FSDM41": 0.100,   # LOWER mmd than the milder pair above
+        "TierC_BFS46_FSDM41": 0.100,
     }
     failure = {
         "clean_TierA": 0.02,
@@ -245,8 +243,7 @@ def make_demo(seed=42):
         "TierD_xmag_x10x20": 0.38,
         "TierD_xmag_x10x50": 0.79,
         "TierD_xmag_x20x50": 0.84,
-        "TierC_DTSR14_WOODAUTH": 0.69,
-        "TierC_BFS46_FSDM41": 0.99,    # worst failure, but mmd is low
+        "TierC_BFS46_FSDM41": 0.67,
     }
     # Mean cosine distance: larger means more within-batch dispersion.
     compact = {
@@ -256,8 +253,7 @@ def make_demo(seed=42):
         "TierD_xmag_x10x20": 0.33,
         "TierD_xmag_x10x50": 0.30,
         "TierD_xmag_x20x50": 0.28,
-        "TierC_DTSR14_WOODAUTH": 0.47,
-        "TierC_BFS46_FSDM41": 0.52,    # more dispersed shifted batch -> lower K_BB
+        "TierC_BFS46_FSDM41": 0.52,
     }
     # add small noise so regressions are not degenerate
     j = lambda d: {k: v + rng.normal(0, 0.005) for k, v in d.items()}
@@ -295,7 +291,7 @@ def analyze(mmd, failure, compact):
 
     # the worst pair: is it both highest failure and below-expected mmd?
     worst = "TierC_BFS46_FSDM41"
-    required = [worst, "TierC_DTSR14_WOODAUTH", "clean_TierA"]
+    required = [worst, "clean_TierA"]
     missing = [c for c in required if c not in mmd or c not in failure or c not in compact]
     if missing:
         raise RuntimeError(
@@ -316,7 +312,7 @@ def analyze(mmd, failure, compact):
         "worst_pair_mmd": mmd[worst],
         "worst_pair_failure": failure[worst],
         "worst_pair_within_batch_spread": compact[worst],
-        "milder_pair_mmd": mmd.get("TierC_DTSR14_WOODAUTH"),
+        "milder_pair_mmd": None,
         "_arrays": (conds, m, f, cp),
     }
 
@@ -327,8 +323,13 @@ def print_summary(out):
           f" = {out['detect_rate']*100:.0f}%  (detecting THAT it shifted is easy)")
     print(f"\n  Q2 severity ranking: Spearman(MMD, failure) = {out['severity_spearman']:.3f}")
     print( "     -> low / non-monotone: MMD does NOT order failure severity.")
-    print(f"     worst pair (BFS46<->FSDM41): failure={out['worst_pair_failure']:.2f} "
-          f"but MMD={out['worst_pair_mmd']:.3f}  <  milder pair MMD={out['milder_pair_mmd']:.3f}")
+    if out.get("milder_pair_mmd") is not None:
+        print(f"     BFS46<->FSDM41: failure={out['worst_pair_failure']:.2f} "
+              f"but MMD={out['worst_pair_mmd']:.3f}  <  comparison-pair MMD={out['milder_pair_mmd']:.3f}")
+    else:
+        print(f"     BFS46<->FSDM41: failure={out['worst_pair_failure']:.2f}, "
+              f"MMD={out['worst_pair_mmd']:.3f}; severity should be read from labels/recalibration, "
+              "not from raw MMD magnitude alone.")
     print(f"\n  Q3 mechanism: failure ~ MMD                  R^2 = {out['r2_mmd_only']:.3f}")
     print(f"                failure ~ MMD+within-batch spread R^2 = {out['r2_mmd_plus_spread']:.3f}")
     print(f"     within-batch spread coefficient = {out['beta_within_batch_spread']:+.3f}")
@@ -356,7 +357,6 @@ def make_figure(out, path="monitor_severity_dissociation.png"):
         "TierD_xmag_x10x20": "x10<->x20",
         "TierD_xmag_x10x50": "x10<->x50",
         "TierD_xmag_x20x50": "x20<->x50",
-        "TierC_DTSR14_WOODAUTH": "DTSR/WOODAUTH",
         "TierC_BFS46_FSDM41": "BFS46/FSDM41",
     }
     ax = axes[0]
@@ -374,7 +374,7 @@ def make_figure(out, path="monitor_severity_dissociation.png"):
     ax.set_xlabel("RBF-MMD monitor score (what the monitor sees)")
     ax.set_ylabel("true failure (1 - accuracy)")
     ax.set_title(
-        f"Measured-failure ranking, 8 groups (Spearman={out['severity_spearman']:.2f})"
+        f"Measured-failure ranking, {len(conds)} groups (Spearman={out['severity_spearman']:.2f})"
     )
     fig.colorbar(
         sc, ax=ax, fraction=0.046, pad=0.04,

@@ -21,11 +21,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from wood_spatial.config import BB_LABEL, BB_ORDER, BASE, V2_CACHE_DIR, V4_FEAT_CACHE
+from wood_spatial.config import BB_LABEL, BB_ORDER, BASE, CROSS_SOURCE_PAIRS, V2_CACHE_DIR, V4_FEAT_CACHE
+from wood_spatial.core.label_corrections import apply_cache_label_correction
 from wood_spatial.result_io import csv_dir, figure_dir, require_csv
 
 
-PAIRS = [("BFS46", "FSDM41"), ("DTSR14", "WOODAUTH")]
+PAIRS = list(CROSS_SOURCE_PAIRS)
 K = 5
 DEFAULT_NULL_PERMUTATIONS = 10_000
 
@@ -140,7 +141,10 @@ def _load_feature_cache_np(backbone: str, dataset: str, tag: str = "original"):
     for path in checked:
         if path.exists():
             data = np.load(path, allow_pickle=True)
-            return data["features"], data["labels"], data["paths"], path
+            labels, paths = apply_cache_label_correction(
+                dataset, data["labels"], data["paths"], set(data.files)
+            )
+            return data["features"], labels, paths, path
     raise FileNotFoundError(
         f"Cache not found for {backbone}/{dataset}/{tag}. Checked: "
         + ", ".join(str(p) for p in checked)
@@ -548,19 +552,62 @@ def _summaries(
 
 
 def _plot(by_cell: pd.DataFrame, transfer: pd.DataFrame, summary: pd.DataFrame, fig_path: Path):
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.0))
+    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.2), gridspec_kw={"width_ratios": [1.15, 1.0]})
     ax = axes[0]
     x = by_cell["centroid_drift"].to_numpy(dtype=float)
     y = by_cell["accuracy_drop"].to_numpy(dtype=float)
-    ax.scatter(x, y, s=14, alpha=0.35, label="species x direction x backbone")
+    ax.scatter(
+        x,
+        y,
+        s=10,
+        alpha=0.12,
+        color="#4C78A8",
+        edgecolors="none",
+        label="species x direction x backbone",
+        zorder=1,
+    )
+    species_means = by_cell.groupby("species", as_index=False).agg(
+        centroid_drift=("centroid_drift", "mean"),
+        accuracy_drop=("accuracy_drop", "mean"),
+        centroid_drift_sem=("centroid_drift", lambda s: float(s.std(ddof=1) / np.sqrt(len(s)))),
+        accuracy_drop_sem=("accuracy_drop", lambda s: float(s.std(ddof=1) / np.sqrt(len(s)))),
+    )
+    ax.errorbar(
+        species_means["centroid_drift"],
+        species_means["accuracy_drop"],
+        xerr=species_means["centroid_drift_sem"],
+        yerr=species_means["accuracy_drop_sem"],
+        fmt="o",
+        ms=5.2,
+        mfc="#F58518",
+        mec="white",
+        mew=0.6,
+        ecolor="#F58518",
+        elinewidth=0.9,
+        capsize=2,
+        alpha=0.95,
+        label="species mean +/- SE",
+        zorder=3,
+    )
     xmin, xmax = float(np.nanmin(x)), float(np.nanmax(x))
     xs = np.linspace(max(0, xmin - 0.02), xmax + 0.02, 100)
     row = summary.iloc[0]
-    ax.plot(xs, row["crosssource_slope"] * xs + row["crosssource_intercept"], color="#E45756", lw=1.5, label="cross-source fit")
+    fit_y = row["crosssource_slope"] * xs + row["crosssource_intercept"]
+    fit_mask = (fit_y >= -0.08) & (fit_y <= 1.05)
+    ax.plot(
+        xs[fit_mask],
+        fit_y[fit_mask],
+        color="#E45756",
+        lw=1.5,
+        label="record-level fit",
+        zorder=2,
+    )
     ax.set_xlabel("distributional feature drift (class-centroid cosine)")
     ax.set_ylabel("accuracy drop")
-    ax.set_title(f"(a) Cross-source drift tracks drop (r={row['crosssource_drift_drop_r']:.3f})")
-    ax.legend(fontsize=8)
+    ax.set_ylim(-0.08, 1.05)
+    ax.set_title(f"(a) Drift-drop trend by shared species (record r={row['crosssource_drift_drop_r']:.3f})")
+    ax.grid(color="#E5E7EB", lw=0.7)
+    ax.legend(fontsize=8, frameon=False, loc="lower right")
 
     ax = axes[1]
     agg = {"cross_source_accuracy": "mean"}

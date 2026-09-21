@@ -1,0 +1,302 @@
+{
+  "ok": true,
+  "created_at": "2026-09-21T23:10:42",
+  "python": "3.9.1 (default, Jun 29 2023, 09:17:38) \n[GCC 9.4.0]",
+  "platform": "Linux-5.15.0-139-generic-x86_64-with-glibc2.31",
+  "results_dir": "/home/thanh/Wood_Research_git/results",
+  "zip": "/home/thanh/Wood_Research_git/results/paper2_no_woodauth_results_20260921_231042.zip",
+  "checks": [
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_tierc_cross_source_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_tierc_cross_source_transfer.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_transfer.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_tierc_cross_source_by_cell.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_by_cell.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_tierc_cross_source_by_pair.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_tierc_cross_source_by_pair.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_source_vs_species_probe_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_source_vs_species_probe_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_source_vs_species_probe_by_backbone.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_source_vs_species_probe_by_backbone.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_on_real_shift_scores.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_scores.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_on_real_shift_by_condition.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_by_condition.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_on_real_shift_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_on_real_shift_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_severity_dissociation_records.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_records.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_severity_dissociation_by_condition.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_by_condition.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_monitor_severity_dissociation_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_monitor_severity_dissociation_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_gamma_sensitivity_records.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_records.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_gamma_sensitivity_by_condition.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_by_condition.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_gamma_sensitivity_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_gamma_sensitivity_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_confound_terms.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_terms.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_confound_regression.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_regression.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_confound_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_confound_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_mmd_class_count_matched.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_mmd_class_count_matched.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_matched_class_dissociation_by_cell.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_by_cell.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_matched_class_dissociation_by_seed.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_by_seed.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp_matched_class_dissociation_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp_matched_class_dissociation_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp5_crossmag_drift_drop.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_drift_drop.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp5_crossmag_asymmetry_summary.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_asymmetry_summary.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp5_crossmag_asymmetry_by_pair.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp5_crossmag_asymmetry_by_pair.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp10_reference_monitor_auc.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp10_reference_monitor_auc.csv"
+    },
+    {
+      "ok": true,
+      "name": "required CSV exists: exp10_operating_points_fixed_fpr.csv",
+      "detail": "/home/thanh/Wood_Research_git/results/csv/exp10_operating_points_fixed_fpr.csv"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: tierc_cross_source_shift.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/tierc_cross_source_shift.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: tierc_cross_source_shift.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/tierc_cross_source_shift.pdf"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: source_vs_species_probe.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/source_vs_species_probe.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: source_vs_species_probe.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/source_vs_species_probe.pdf"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: monitor_on_real_shift.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/monitor_on_real_shift.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: monitor_on_real_shift.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/monitor_on_real_shift.pdf"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: monitor_severity_dissociation.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/monitor_severity_dissociation.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: monitor_severity_dissociation.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/monitor_severity_dissociation.pdf"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: mmd_gamma_sensitivity.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/mmd_gamma_sensitivity.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: mmd_gamma_sensitivity.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/mmd_gamma_sensitivity.pdf"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: cross_magnification_asymmetry.png",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/cross_magnification_asymmetry.png"
+    },
+    {
+      "ok": true,
+      "name": "required figure exists: cross_magnification_asymmetry.pdf",
+      "detail": "/home/thanh/Wood_Research_git/results/figures/cross_magnification_asymmetry.pdf"
+    },
+    {
+      "ok": true,
+      "name": "Tier-C transfer has only BFS46<->FSDM41",
+      "detail": [
+        "BFS46<->FSDM41"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "Tier-C transfer row count is 14",
+      "detail": 14
+    },
+    {
+      "ok": true,
+      "name": "Tier-C directions are BFS/FSDM only",
+      "detail": [
+        "BFS46->FSDM41",
+        "FSDM41->BFS46"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "source-vs-species summary has only BFS46<->FSDM41",
+      "detail": [
+        "BFS46<->FSDM41"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "monitor real-shift conditions have no WOODAUTH/DTSR14 pair",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "name": "monitor real-shift condition counts match no-WOODAUTH run",
+      "detail": {
+        "TierB_synth": 2128,
+        "TierD_xmag": 42,
+        "TierA_clean": 21,
+        "TierC_BFS46_FSDM41": 14
+      }
+    },
+    {
+      "ok": true,
+      "name": "MMD gamma policy counts are 77 each",
+      "detail": {
+        "per_pair_median": 77,
+        "global_median": 77,
+        "global_median_x0.5": 77,
+        "global_median_x2.0": 77
+      }
+    },
+    {
+      "ok": true,
+      "name": "MMD gamma conditions have no stale WOODAUTH/DTSR14 pair",
+      "detail": []
+    },
+    {
+      "ok": true,
+      "name": "MMD confound terms have only BFS46<->FSDM41",
+      "detail": [
+        "BFS46<->FSDM41"
+      ]
+    },
+    {
+      "ok": true,
+      "name": "MMD confound terms row count is 14",
+      "detail": 14
+    },
+    {
+      "ok": true,
+      "name": "exp_mmd_class_count_matched.csv is empty after removing second Tier-C pair",
+      "detail": 0
+    },
+    {
+      "ok": true,
+      "name": "exp_matched_class_dissociation_by_cell.csv is empty after removing second Tier-C pair",
+      "detail": 0
+    },
+    {
+      "ok": true,
+      "name": "exp_matched_class_dissociation_by_seed.csv is empty after removing second Tier-C pair",
+      "detail": 0
+    },
+    {
+      "ok": true,
+      "name": "exp_matched_class_dissociation_summary.csv is empty after removing second Tier-C pair",
+      "detail": 0
+    },
+    {
+      "ok": true,
+      "name": "packaged files contain no stale WOODAUTH/DTSR14 terms",
+      "detail": []
+    }
+  ],
+  "optional_missing_figures": [],
+  "stale_term_hits_in_results_csv": [],
+  "stale_term_hits_in_packaged_files": []
+}

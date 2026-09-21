@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit the MMD mechanism sign and the Tier-C shared-class-count confound."""
+"""Audit the MMD mechanism sign and optional Tier-C shared-class-count control."""
 from __future__ import annotations
 
 import argparse
@@ -121,12 +121,12 @@ def _regression_summary(df: pd.DataFrame, scope: str) -> dict[str, float | str |
 def _severity_regression_from_saved_csv() -> dict[str, float | str | int]:
     path = _find_csv("exp_monitor_severity_dissociation_by_condition.csv")
     if not path.exists():
-        return {"scope": "eight_condition_groups", "n": 0}
+        return {"scope": "condition_groups", "n": 0}
     df = pd.read_csv(path)
     if "within_batch_spread" not in df.columns and "compactness" in df.columns:
         df = df.rename(columns={"compactness": "within_batch_spread"})
     return _regression_summary(
-        df.rename(columns={"mmd": "mmd2"}), "eight_condition_groups"
+        df.rename(columns={"mmd": "mmd2"}), "condition_groups"
     )
 
 
@@ -188,65 +188,74 @@ def run_real(
         )
     terms_df = pd.DataFrame(term_rows)
 
-    big_a, big_b = PAIRS[0]
-    small_a, small_b = PAIRS[1]
-    big_pair = f"{big_a}<->{big_b}"
-    small_pair = f"{small_a}<->{small_b}"
-    big_species = _shared_species(table, big_a, big_b)
-    small_species = _shared_species(table, small_a, small_b)
-    match_n = len(small_species)
-    if len(big_species) < match_n:
-        raise RuntimeError("The large Tier-C pair has fewer species than the control pair.")
+    matched_df = pd.DataFrame()
+    class_summary = pd.DataFrame()
+    if len(PAIRS) >= 2:
+        big_a, big_b = PAIRS[0]
+        small_a, small_b = PAIRS[1]
+        big_pair = f"{big_a}<->{big_b}"
+        small_pair = f"{small_a}<->{small_b}"
+        big_species = _shared_species(table, big_a, big_b)
+        small_species = _shared_species(table, small_a, small_b)
+        match_n = len(small_species)
+        if len(big_species) < match_n:
+            raise RuntimeError("The large Tier-C pair has fewer species than the control pair.")
 
-    matched_tasks = []
-    for seed in range(seeds):
-        rng = np.random.default_rng(seed)
-        selected = sorted(rng.choice(big_species, size=match_n, replace=False).tolist())
-        for backbone in BB_ORDER:
-            for source, target in ((big_a, big_b), (big_b, big_a)):
-                matched_tasks.append((seed, selected, backbone, source, target))
+        matched_tasks = []
+        for seed in range(seeds):
+            rng = np.random.default_rng(seed)
+            selected = sorted(rng.choice(big_species, size=match_n, replace=False).tolist())
+            for backbone in BB_ORDER:
+                for source, target in ((big_a, big_b), (big_b, big_a)):
+                    matched_tasks.append((seed, selected, backbone, source, target))
 
-    def compute_matched(task):
-        seed, selected, backbone, source, target = task
-        terms = _mmd_terms(
-            _stack(features[(backbone, source)], selected),
-            _stack(features[(backbone, target)], selected),
-            cap,
-            seed * 1000 + BB_ORDER.index(backbone) * 10 + int(source == big_b),
+        def compute_matched(task):
+            seed, selected, backbone, source, target = task
+            terms = _mmd_terms(
+                _stack(features[(backbone, source)], selected),
+                _stack(features[(backbone, target)], selected),
+                cap,
+                seed * 1000 + BB_ORDER.index(backbone) * 10 + int(source == big_b),
+            )
+            return {
+                "seed": seed,
+                "pair": big_pair,
+                "direction": f"{source}->{target}",
+                "backbone": backbone,
+                "n_shared_species": match_n,
+                "selected_species": "|".join(selected),
+                **terms,
+            }
+
+        print(f"[parallel] class-match tasks={len(matched_tasks)} jobs={jobs}", flush=True)
+        with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
+            matched_rows = list(pool.map(compute_matched, matched_tasks))
+        for seed in range(seeds):
+            print(f"[class match] seed {seed + 1}/{seeds} complete", flush=True)
+        matched_df = pd.DataFrame(matched_rows)
+
+        small_mean = float(terms_df.loc[terms_df["pair"].eq(small_pair), "mmd2"].mean())
+        raw_big_mean = float(terms_df.loc[terms_df["pair"].eq(big_pair), "mmd2"].mean())
+        seed_means = matched_df.groupby("seed")["mmd2"].mean()
+        class_summary = pd.DataFrame([{
+            "large_pair": big_pair,
+            "small_pair": small_pair,
+            "large_pair_raw_mmd2": raw_big_mean,
+            "small_pair_raw_mmd2": small_mean,
+            "large_pair_matched_4class_mmd2_mean": float(seed_means.mean()),
+            "large_pair_matched_4class_mmd2_std": float(seed_means.std(ddof=1)),
+            "large_pair_matched_4class_mmd2_ci_low": float(seed_means.quantile(0.025)),
+            "large_pair_matched_4class_mmd2_ci_high": float(seed_means.quantile(0.975)),
+            "fraction_seeds_inversion_survives": float(np.mean(seed_means < small_mean)),
+            "n_seeds": int(seeds),
+            "matched_species_count": int(match_n),
+        }])
+    else:
+        print(
+            "[skip] shared-class-count control requires at least two Tier-C pairs; "
+            "only MMD decomposition/regression will be written.",
+            flush=True,
         )
-        return {
-            "seed": seed,
-            "pair": big_pair,
-            "direction": f"{source}->{target}",
-            "backbone": backbone,
-            "n_shared_species": match_n,
-            "selected_species": "|".join(selected),
-            **terms,
-        }
-
-    print(f"[parallel] class-match tasks={len(matched_tasks)} jobs={jobs}", flush=True)
-    with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
-        matched_rows = list(pool.map(compute_matched, matched_tasks))
-    for seed in range(seeds):
-        print(f"[class match] seed {seed + 1}/{seeds} complete", flush=True)
-    matched_df = pd.DataFrame(matched_rows)
-
-    small_mean = float(terms_df.loc[terms_df["pair"].eq(small_pair), "mmd2"].mean())
-    raw_big_mean = float(terms_df.loc[terms_df["pair"].eq(big_pair), "mmd2"].mean())
-    seed_means = matched_df.groupby("seed")["mmd2"].mean()
-    class_summary = pd.DataFrame([{
-        "large_pair": big_pair,
-        "small_pair": small_pair,
-        "large_pair_raw_mmd2": raw_big_mean,
-        "small_pair_raw_mmd2": small_mean,
-        "large_pair_matched_4class_mmd2_mean": float(seed_means.mean()),
-        "large_pair_matched_4class_mmd2_std": float(seed_means.std(ddof=1)),
-        "large_pair_matched_4class_mmd2_ci_low": float(seed_means.quantile(0.025)),
-        "large_pair_matched_4class_mmd2_ci_high": float(seed_means.quantile(0.975)),
-        "fraction_seeds_inversion_survives": float(np.mean(seed_means < small_mean)),
-        "n_seeds": int(seeds),
-        "matched_species_count": int(match_n),
-    }])
 
     regression = pd.DataFrame([
         _regression_summary(terms_df, "tier_c_direction_backbone_cells"),
@@ -282,7 +291,7 @@ def make_demo() -> dict[str, pd.DataFrame]:
 def make_figure(tables: dict[str, pd.DataFrame], path: Path) -> None:
     terms = tables["terms"]
     matched = tables["matched"]
-    class_summary = tables["class_summary"].iloc[0]
+    class_summary = tables["class_summary"]
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.2))
 
     ax = axes[0]
@@ -306,7 +315,8 @@ def make_figure(tables: dict[str, pd.DataFrame], path: Path) -> None:
     ax.set_title("(a) MMD decomposition by cross-source pair")
 
     ax = axes[1]
-    if not matched.empty:
+    if not matched.empty and not class_summary.empty:
+        class_summary_row = class_summary.iloc[0]
         seed_means = matched.groupby("seed")["mmd2"].mean().to_numpy()
         ax.boxplot(
             seed_means,
@@ -325,28 +335,28 @@ def make_figure(tables: dict[str, pd.DataFrame], path: Path) -> None:
             zorder=3,
         )
         ax.axhline(
-            float(class_summary["small_pair_raw_mmd2"]),
+            float(class_summary_row["small_pair_raw_mmd2"]),
             color="#4C78A8",
             linestyle="--",
-            label="4-species DTSR14/WOODAUTH",
+            label="comparison four-species pair",
         )
         ax.axhline(
-            float(class_summary["large_pair_raw_mmd2"]),
+            float(class_summary_row["large_pair_raw_mmd2"]),
             color="#555555",
             linestyle=":",
-            label="raw 24-species baseline",
+            label="raw large-pair baseline",
         )
         ax.axhline(
-            float(class_summary["large_pair_matched_4class_mmd2_mean"]),
+            float(class_summary_row["large_pair_matched_4class_mmd2_mean"]),
             color="#B22222",
             linestyle="-.",
-            label="matched 4-species mean",
+            label="matched-species mean",
         )
-        ax.set_xticks([0], ["BFS46/FSDM41\nmatched to 4 species"])
+        ax.set_xticks([0], ["large pair\nmatched to comparison"])
         ax.set_ylabel(r"RBF-MMD$^2$")
         ax.legend(frameon=False, fontsize=8, loc="upper left")
     else:
-        ax.text(0.5, 0.5, "Run --real for matched-class control",
+        ax.text(0.5, 0.5, "Shared-class-count control skipped:\nonly one Tier-C pair configured",
                 ha="center", va="center", transform=ax.transAxes)
         ax.set_xticks([])
     ax.set_title("(b) Shared-class-count sensitivity")
@@ -384,7 +394,10 @@ def main() -> None:
     print("\n=== MMD decomposition/regression ===")
     print(tables["regression"].round(4).to_string(index=False))
     print("\n=== Shared-class-count control ===")
-    print(tables["class_summary"].round(4).to_string(index=False))
+    if tables["class_summary"].empty:
+        print("skipped: requires at least two Tier-C cross-source pairs")
+    else:
+        print(tables["class_summary"].round(4).to_string(index=False))
 
     if args.real and not args.no_save:
         out = _output_dir()

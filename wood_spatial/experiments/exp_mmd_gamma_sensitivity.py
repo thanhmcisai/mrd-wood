@@ -53,7 +53,6 @@ CONDITION_ORDER = [
     "TierD_xmag_x10x20",
     "TierD_xmag_x10x50",
     "TierD_xmag_x20x50",
-    "TierC_DTSR14_WOODAUTH",
     "TierC_BFS46_FSDM41",
 ]
 
@@ -66,8 +65,15 @@ XMAG_CONDITIONS = {
 EXPECTED_MONITOR_COUNTS = {
     "TierA_clean": 21,
     "TierD_xmag": 42,
-    "TierC_DTSR14_WOODAUTH": 14,
     "TierC_BFS46_FSDM41": 14,
+}
+
+EXPECTED_CHECKPOINT_CONDITION_COUNTS = {
+    "clean_TierA": 3,
+    "TierD_xmag_x10x20": 2,
+    "TierD_xmag_x10x50": 2,
+    "TierD_xmag_x20x50": 2,
+    "TierC_BFS46_FSDM41": 2,
 }
 
 _THREADPOOL_GUARD = None
@@ -94,6 +100,32 @@ def _io_dirs() -> tuple[Path, Path]:
 
 def _find_csv(name: str) -> Path:
     return require_csv(name)
+
+
+def _checkpoint_is_current(cached: pd.DataFrame) -> bool:
+    required = {"policy", "condition"}
+    if cached.empty or not required.issubset(cached.columns):
+        return False
+    expected_total = sum(EXPECTED_CHECKPOINT_CONDITION_COUNTS.values())
+    policies = {
+        "per_pair_median",
+        "global_median",
+        "global_median_x0.5",
+        "global_median_x2.0",
+    }
+    if set(cached["policy"].dropna().unique()) != policies:
+        return False
+    expected_conditions = set(EXPECTED_CHECKPOINT_CONDITION_COUNTS)
+    if not set(cached["condition"].dropna().unique()).issubset(expected_conditions):
+        return False
+    for policy in policies:
+        sub = cached[cached["policy"] == policy]
+        if len(sub) != expected_total:
+            return False
+        counts = sub["condition"].value_counts().to_dict()
+        if counts != EXPECTED_CHECKPOINT_CONDITION_COUNTS:
+            return False
+    return True
 
 
 def _sqdist(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -368,10 +400,12 @@ def run_real(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
         checkpoint = checkpoint_dir / f"{bb}_cap{args.cap}.csv"
         if checkpoint.exists() and not args.force:
             cached = pd.read_csv(checkpoint)
-            if len(cached):
+            if len(cached) and _checkpoint_is_current(cached):
                 rows.extend(cached.to_dict("records"))
                 print(f"[resume] {bb}: loaded {len(cached)} rows from {checkpoint}", flush=True)
                 continue
+            print(f"[stale] {bb}: ignoring outdated checkpoint {checkpoint}", flush=True)
+            checkpoint.unlink(missing_ok=True)
         pending.append((bb, table, monitor_real, tierd, tierc, args.cap))
 
     tasks = pending
@@ -421,7 +455,6 @@ def run_real(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
         sub["order"] = sub["condition"].map({c: i for i, c in enumerate(CONDITION_ORDER)})
         sub = sub.sort_values("order")
         worst = sub[sub["condition"] == "TierC_BFS46_FSDM41"]
-        milder = sub[sub["condition"] == "TierC_DTSR14_WOODAUTH"]
         summary_rows.append({
             "policy": policy,
             "condition_spearman": _spearman(sub["mmd"].to_numpy(), sub["failure"].to_numpy()),
@@ -430,8 +463,8 @@ def run_real(args: argparse.Namespace) -> tuple[pd.DataFrame, pd.DataFrame, pd.D
                 detail.loc[detail["policy"] == policy, "failure"].to_numpy(),
             ),
             "worst_pair_mmd": float(worst.iloc[0]["mmd"]) if len(worst) else np.nan,
-            "milder_pair_mmd": float(milder.iloc[0]["mmd"]) if len(milder) else np.nan,
-            "worst_below_milder": bool(float(worst.iloc[0]["mmd"]) < float(milder.iloc[0]["mmd"])) if len(worst) and len(milder) else np.nan,
+            "milder_pair_mmd": np.nan,
+            "worst_below_milder": np.nan,
             "n_conditions": int(len(sub)),
             "n_records": int(len(detail[detail["policy"] == policy])),
         })
@@ -449,7 +482,6 @@ def plot_summary(by_condition: pd.DataFrame, summary: pd.DataFrame, path: Path) 
         "TierD_xmag_x10x20": "D x10/20",
         "TierD_xmag_x10x50": "D x10/50",
         "TierD_xmag_x20x50": "D x20/50",
-        "TierC_DTSR14_WOODAUTH": "C DTSR/WA",
         "TierC_BFS46_FSDM41": "C BFS/FSDM",
     }
     fig, ax = plt.subplots(figsize=(10.5, 4.8))
@@ -481,7 +513,6 @@ def make_demo() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         "TierD_xmag_x10x20": 0.42,
         "TierD_xmag_x10x50": 0.75,
         "TierD_xmag_x20x50": 0.83,
-        "TierC_DTSR14_WOODAUTH": 0.68,
         "TierC_BFS46_FSDM41": 0.99,
     }
     for policy in ("per_pair_median", "global_median", "global_median_x0.5", "global_median_x2.0"):
@@ -500,8 +531,8 @@ def make_demo() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         "condition_spearman": _spearman(s["mmd"].to_numpy(), s["failure"].to_numpy()),
         "record_spearman": np.nan,
         "worst_pair_mmd": float(s.loc[s["condition"] == "TierC_BFS46_FSDM41", "mmd"].iloc[0]),
-        "milder_pair_mmd": float(s.loc[s["condition"] == "TierC_DTSR14_WOODAUTH", "mmd"].iloc[0]),
-        "worst_below_milder": bool(float(s.loc[s["condition"] == "TierC_BFS46_FSDM41", "mmd"].iloc[0]) < float(s.loc[s["condition"] == "TierC_DTSR14_WOODAUTH", "mmd"].iloc[0])),
+        "milder_pair_mmd": np.nan,
+        "worst_below_milder": np.nan,
         "n_conditions": int(len(s)),
         "n_records": int(s["n_records"].sum()),
     })).reset_index()

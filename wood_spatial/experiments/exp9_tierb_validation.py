@@ -3,7 +3,7 @@ Wood Spatial — Experiment 9: Cross-Dataset Feature Geometry Validation
 =======================================================================
 Validates that the feature geometry → failure link (r=0.924 on Tier-A)
 generalizes to external acquisition protocols
-(Tier-B: BFS46, FSDM41, GOIMAI, WOODAUTH, BD11).
+(Tier-B: BFS46, FSDM41, GOIMAI, BD11).
 
 Usage:
     python -m wood_spatial.experiments.exp9_tierb_validation

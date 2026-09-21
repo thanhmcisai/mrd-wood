@@ -117,7 +117,8 @@ def plot_accuracy_heatmap():
         for j in range(len(pt_cols)):
             v = pivot.values[i, j]
             ax.text(j, i, f'{v:.2f}', ha='center', va='center',
-                    fontsize=7, color='white' if v > 0.45 else 'black')
+                    fontsize=9,
+                    color='white' if v > 0.45 else 'black')
     ax.set_xticks(range(len(pt_cols)))
     ax.set_xticklabels(xlabels, rotation=30, ha='right')
     ax.set_yticks(range(len(ylabels)))
@@ -855,6 +856,8 @@ def plot_tierb_validation():
 
     df_cmp = pd.read_csv(path)
     df_tierb = pd.read_csv(V4_CSV / 'exp9_tierb_geometry.csv').dropna(subset=['drop', 'feature_drift'])
+    if 'dataset' in df_tierb.columns:
+        df_tierb = df_tierb[df_tierb['dataset'] != 'WOODAUTH'].copy()
     df_tiera = pd.read_csv(V4_CSV / 'exp1b_feature_geometry.csv').dropna(subset=['drop', 'feature_drift'])
 
     fig, axes = plt.subplots(
@@ -865,9 +868,11 @@ def plot_tierb_validation():
     # Left: scatter both tiers on same plot
     ax = axes[0]
     ax.scatter(df_tiera['feature_drift'], df_tiera['drop'],
-               alpha=0.3, s=12, color='steelblue', label='Tier-A (controlled, n=714)')
+               alpha=0.3, s=12, color='steelblue',
+               label=f'Tier-A (controlled, n={len(df_tiera)})')
     ax.scatter(df_tierb['feature_drift'], df_tierb['drop'],
-               alpha=0.6, s=24, color='firebrick', marker='^', label='Tier-B (wild)')
+               alpha=0.6, s=24, color='firebrick', marker='^',
+               label=f'Tier-B (wild, n={len(df_tierb)})')
     from scipy.stats import pearsonr
     for tier, df_t, col in [('A', df_tiera, 'steelblue'), ('B', df_tierb, 'firebrick')]:
         sub = df_t.dropna(subset=['feature_drift', 'drop'])
@@ -886,6 +891,8 @@ def plot_tierb_validation():
     ax2 = axes[1]
     if path_corr.exists():
         df_corr = pd.read_csv(path_corr)
+        if 'dataset' in df_corr.columns:
+            df_corr = df_corr[df_corr['dataset'] != 'WOODAUTH'].copy()
         all_rows = list(df_corr[['dataset', 'r', 'n']].itertuples(index=False))
         # Add Tier-A overall
         r_a, _ = pearsonr(df_tiera['feature_drift'].values, df_tiera['drop'].values)

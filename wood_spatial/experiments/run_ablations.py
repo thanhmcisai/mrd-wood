@@ -51,7 +51,7 @@ def discover_cache(fcache, backbones):
     """Return {(bb, ds): [tag, ...]} for all available cache files."""
     from collections import defaultdict
     index = defaultdict(list)
-    known_ds = ['WRD25','DTSR14','PCA11','BFS46','FSDM41','GOIMAI','WOODAUTH','BD11',
+    known_ds = ['WRD25','DTSR14','PCA11','BFS46','FSDM41','GOIMAI','BD11',
                 'VN26_x10','VN26_x20','VN26_x50']
     for bb in backbones:
         for f in sorted(fcache.glob(f'{bb}_*.npz')):

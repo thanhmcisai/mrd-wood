@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Compare matched-class marginal MMD with class-conditional transfer failure."""
+"""Compare matched-class marginal MMD with class-conditional transfer failure.
+
+This control requires at least two Tier-C cross-source pairs. When the
+configuration contains only one Tier-C pair, the stage writes empty outputs so a
+full rerun cannot leave stale removed-dataset results behind.
+"""
 from __future__ import annotations
 
 import argparse
@@ -39,6 +44,8 @@ def _find_csv(name: str) -> Path:
 
 
 def _selected_species_by_seed(matched: pd.DataFrame) -> dict[int, list[str]]:
+    if matched.empty:
+        return {}
     required = {"seed", "selected_species"}
     if not required.issubset(matched.columns):
         raise ValueError(f"Matched-class CSV must contain {sorted(required)}")
@@ -76,6 +83,26 @@ def _transfer_accuracy(
 
 
 def run_real(species_csv: str, jobs: int) -> dict[str, pd.DataFrame]:
+    if len(PAIRS) < 2:
+        print(
+            "[skip] matched-class dissociation requires at least two Tier-C pairs; "
+            "writing empty outputs.",
+            flush=True,
+        )
+        empty_cell = pd.DataFrame(columns=[
+            "seed", "pair", "direction", "backbone", "n_species",
+            "selected_species", "accuracy", "failure", "chance_accuracy", "mmd2",
+        ])
+        empty_seed = pd.DataFrame(columns=[
+            "seed", "pair", "mean_mmd2", "mean_accuracy", "mean_failure", "n_cells",
+        ])
+        empty_summary = pd.DataFrame(columns=[
+            "pair", "n_species", "n_seeds", "mean_mmd2", "sd_mmd2",
+            "mean_accuracy", "sd_accuracy", "accuracy_ci_low",
+            "accuracy_ci_high", "mean_failure", "chance_accuracy",
+        ])
+        return {"by_cell": empty_cell, "by_seed": empty_seed, "summary": empty_summary}
+
     table = _species_table(_resolve_species_csv(species_csv))
     matched_mmd = pd.read_csv(_find_csv("exp_mmd_class_count_matched.csv"))
     full_terms = pd.read_csv(_find_csv("exp_mmd_confound_terms.csv"))
@@ -93,6 +120,8 @@ def run_real(species_csv: str, jobs: int) -> dict[str, pd.DataFrame]:
     full_lookup = full_terms.set_index(["pair", "direction", "backbone"])
     tasks = []
     first_seed = min(selected_by_seed)
+    large_pair = f"{PAIRS[0][0]}<->{PAIRS[0][1]}"
+    comparison_pair = f"{PAIRS[1][0]}<->{PAIRS[1][1]}"
     for seed, large_species in sorted(selected_by_seed.items()):
         for pair_index, (dataset_a, dataset_b) in enumerate(PAIRS):
             if pair_index == 1 and seed != first_seed:
@@ -100,7 +129,7 @@ def run_real(species_csv: str, jobs: int) -> dict[str, pd.DataFrame]:
             pair = f"{dataset_a}<->{dataset_b}"
             species = (
                 large_species
-                if pair == "BFS46<->FSDM41"
+                if pair == large_pair
                 else _shared_species(table, dataset_a, dataset_b)
             )
             if len(species) != 4:
@@ -117,7 +146,7 @@ def run_real(species_csv: str, jobs: int) -> dict[str, pd.DataFrame]:
             features[(backbone, target)],
             species,
         )
-        if pair == "BFS46<->FSDM41":
+        if pair == large_pair:
             mmd2 = float(matched_lookup.loc[(seed, direction, backbone), "mmd2"])
         else:
             mmd2 = float(full_lookup.loc[(pair, direction, backbone), "mmd2"])
@@ -139,7 +168,7 @@ def run_real(species_csv: str, jobs: int) -> dict[str, pd.DataFrame]:
         rows = list(pool.map(compute, tasks))
     small_rows = [
         row for row in rows
-        if row["pair"] == "DTSR14<->WOODAUTH" and row["seed"] == first_seed
+        if row["pair"] == comparison_pair and row["seed"] == first_seed
     ]
     for seed in sorted(selected_by_seed):
         if seed == first_seed:
@@ -183,8 +212,8 @@ def make_demo() -> dict[str, pd.DataFrame]:
     rows = []
     for seed in range(20):
         for pair, mmd, accuracy in (
-            ("BFS46<->FSDM41", 0.209, 0.05),
-            ("DTSR14<->WOODAUTH", 0.193, 0.32),
+            ("large_pair", 0.209, 0.05),
+            ("comparison_pair", 0.193, 0.32),
         ):
             rows.append({
                 "seed": seed,
@@ -198,8 +227,26 @@ def make_demo() -> dict[str, pd.DataFrame]:
 
 
 def make_figure(by_seed: pd.DataFrame, path: Path) -> None:
-    pairs = ["BFS46<->FSDM41", "DTSR14<->WOODAUTH"]
-    labels = ["BFS46/FSDM41", "DTSR14/WOODAUTH"]
+    if by_seed.empty or by_seed["pair"].nunique() < 2:
+        fig, ax = plt.subplots(figsize=(7.2, 3.8))
+        ax.text(
+            0.5,
+            0.5,
+            "Matched-class dissociation skipped:\nonly one Tier-C pair configured",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+        )
+        ax.set_axis_off()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path, dpi=220, bbox_inches="tight")
+        fig.savefig(path.with_suffix(".pdf"), bbox_inches="tight")
+        plt.close(fig)
+        return
+
+    pairs = list(by_seed["pair"].drop_duplicates())
+    labels = [p.replace("<->", "/") for p in pairs[:2]]
+    pairs = pairs[:2]
     colors = ["#E45756", "#4C78A8"]
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.1))
     for ax, column, ylabel, title in (

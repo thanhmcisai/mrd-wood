@@ -1,2 +1,2 @@
 crosssource_slope,crosssource_intercept,crosssource_drift_drop_r,crosssource_drift_drop_r_ci_low,crosssource_drift_drop_r_ci_high,bootstrap_reps,bootstrap_seed,drift_metric,n_crosssource_records,n_transfer_cells,permutation_null_status,n_cells_below_null_0_05
-0.30231467716519766,0.7801922473160571,0.33091499453149176,0.26428631401072,0.3949759309684354,10000,42,class_centroid_distributional_drift,392,28,complete,17
+1.57484318747347,0.06818056151276805,0.5481615348885142,0.47779406086986453,0.6117782849539253,10000,42,class_centroid_distributional_drift,336,14,complete,0
