@@ -7,10 +7,9 @@ Code and results for:
 MRD-Wood (Mapping Representation Drift for Wood Recognition) is an empirical
 diagnostic protocol for studying acquisition-shift failure in frozen visual
 representations. It is not a new classifier or drift detector. The repository
-contains the experiment package, processed CSV outputs, paper figures, and
-manuscript source.
+contains the experiment package, processed CSV outputs, and paper figures.
 
-![MRD-Wood overview](results/figures/mrd_wood_overview_figure1.png)
+![MRD-Wood overview](results/figures/figure1_mrd_overview.png)
 
 ## Scope
 
@@ -19,8 +18,8 @@ The study evaluates seven pretrained backbones across four experimental tiers:
 | Tier | Data | Role |
 |---|---|---|
 | A | WRD25, DTSR14, PCA11 | Paired synthetic perturbations and controlled drift analysis |
-| B | BFS46, FSDM41, GOIMAI, WOODAUTH, BD11 | External-source validation under the same perturbation suite |
-| C | BFS46/FSDM41, DTSR14/WOODAUTH | Real cross-source transfer over shared accepted species |
+| B | BFS46, FSDM41, GOIMAI, BD11 | External-source validation under the same perturbation suite |
+| C | BFS46/FSDM41 | Real cross-source transfer over 24 shared accepted species |
 | D | VN26 x10/x20/x50 | Real cross-magnification transfer and asymmetry |
 
 The evaluated backbones are ResNet-50, EfficientNet-B3, ConvNeXt-T, Swin-T,
@@ -36,19 +35,18 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 - The transferable cross-space component is smaller (`partial r = 0.178`);
   pooled same-space `r = 0.908` is treated as an upper-bound association.
 - A balanced leave-one-species-out probe recovers acquisition source at
-  `0.923/0.940` accuracy (binary chance `0.5`), while cross-source species
-  recognition is below or near its nominal uniform-class reference (`0.014`
-  vs `1/24`; `0.278` vs `1/4`). This exposes a class-conditional gap within a
-  source-sensitive marginal representation.
-- Shared-species transfer nearly collapses for BFS46/FSDM41
-  (`accuracy = 0.008-0.013`); all 14 backbone-direction cells are below their
-  label-permutation null (`p <= 0.0003`). DTSR14/WOODAUTH is mixed relative to
-  its null.
+  `0.944` accuracy for BFS46/FSDM41 (binary chance `0.5`), while cross-source
+  species recognition remains much lower (`0.342` mean accuracy). This exposes
+  a class-conditional gap within a source-sensitive marginal representation.
+- Shared-species transfer is strongly degraded and asymmetric for BFS46/FSDM41
+  (`0.283` for BFS46 -> FSDM41 and `0.377` for FSDM41 -> BFS46), but remains
+  above the deterministic label-permutation null in all 14 backbone-direction
+  cells.
 - VN26 transfer is asymmetric and non-monotone across magnification pairs, with
   x50 as the main cross-scale failure locus.
 - A standard reference-bank RBF-MMD monitor reaches batch-level
-  `ROC-AUC = 0.968` and `F1 = 0.909` on synthetic shifts and flags 60/70
-  real-shift batches. Its raw magnitude detects acquisition mismatch but does
+  `ROC-AUC = 0.969` and `F1 = 0.909` on 3,724 synthetic-shift records and flags
+  47/56 real-shift batches. Its raw magnitude detects acquisition mismatch but does
   not rank class-conditional failure reliably across heterogeneous sources.
 
 ## Selected Results
@@ -100,13 +98,12 @@ results/
   csv/               Processed numerical outputs tracked by git
   figures/           PNG figures tracked by git
   audit/             Machine-readable paper/CSV consistency audit
-main.tex             Manuscript source
 references.bib       Bibliography
 ```
 
 Datasets, feature caches, model weights, `results_v4/`, LaTeX build artifacts,
-third-party binaries, and generated experiment PDFs are excluded by
-`.gitignore`. The tracked `main.pdf` is a manuscript snapshot.
+third-party binaries, manuscript PDFs, and generated experiment PDFs are
+excluded by `.gitignore`.
 
 ## Setup
 
@@ -214,16 +211,6 @@ and no warnings or failures.
 
 ## Manuscript
 
-Build with the bundled Tectonic binary when available:
-
-```bash
-./third_party/tectonic-musl/tectonic \
-  --keep-logs \
-  --keep-intermediates \
-  main.tex
-```
-
-The manuscript uses the Elsevier CAS single-column template. Generated PDFs are
-not required to reproduce the numerical results. The main body ends before the
-references at approximately 25 pages; extended spatial, margin, decision-rule,
-and monitoring checks are retained in the Supplementary Material.
+Manuscript TeX/PDF snapshots are intentionally not tracked on `main`. The
+repository tracks the reproducible experiment code, processed numerical outputs,
+paper figures, and audit reports needed to verify the reported results.
