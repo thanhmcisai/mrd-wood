@@ -406,17 +406,23 @@ def main() -> None:
         tables["matched"].to_csv(out / "exp_mmd_class_count_matched.csv", index=False)
         tables["class_summary"].to_csv(out / "exp_mmd_confound_summary.csv", index=False)
         print(f"\nSaved CSV outputs to {out}")
-        if not args.no_fig:
+        has_class_count_control = not tables["class_summary"].empty
+        if not args.no_fig and has_class_count_control:
             fig_path = _figure_dir() / "mmd_confound_and_class_count.png"
             make_figure(tables, fig_path)
             print(f"Saved figure to {fig_path}")
+        elif not args.no_fig:
+            print(
+                "Skipped MMD confound/class-count figure: "
+                "shared-class-count control requires at least two Tier-C pairs."
+            )
         outputs = [
             out / "exp_mmd_confound_terms.csv",
             out / "exp_mmd_confound_regression.csv",
             out / "exp_mmd_class_count_matched.csv",
             out / "exp_mmd_confound_summary.csv",
         ]
-        if not args.no_fig:
+        if not args.no_fig and has_class_count_control:
             outputs.extend([fig_path, fig_path.with_suffix(".pdf")])
         write_provenance(
             "exp_mmd_confound_and_sign",

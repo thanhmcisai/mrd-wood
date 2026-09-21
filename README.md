@@ -75,8 +75,6 @@ DINOv2-B, HRNet-32, and MobileNetV3-L.
 
 ![MMD severity dissociation](results/figures/monitor_severity_dissociation.png)
 
-![MMD confound and class-count controls](results/figures/mmd_confound_and_class_count.png)
-
 The monitoring controls separate two roles that should not be conflated:
 thresholded RBF-MMD is evaluated as a binary acquisition-mismatch alarm, whereas
 raw MMD magnitude is tested and rejected as a universal accuracy-loss scale.
@@ -96,7 +94,6 @@ results/
   csv/               Processed numerical outputs tracked by git
   figures/           PNG figures tracked by git
   audit/             Machine-readable paper/CSV consistency audit
-references.bib       Bibliography
 ```
 
 Datasets, feature caches, model weights, `results_v4/`, LaTeX build artifacts,
